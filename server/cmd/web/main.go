@@ -1,0 +1,14 @@
+package main
+
+import "mood-bridge-v2/server/infrastructure/db"
+
+func main() {
+	// Pertama-tama kita akan inisialisasi koneksi ke database PostgreSQL
+	database := db.NewDbConnection()
+	defer database.Close()
+
+	// Setelah itu kita akan migrasi database-nya
+	db.Migrate(database)
+
+	// Terakhir kita jalankan server-nya
+}
