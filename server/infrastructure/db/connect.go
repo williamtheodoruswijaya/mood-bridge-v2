@@ -18,7 +18,7 @@ type Config struct {
 	DBName   string
 }
 
-func NewDbConnection() *sql.DB{
+func NewDbConnection() *sql.DB {
 	// Load .env file-nya
 	err := godotenv.Load()
 	if err != nil {
@@ -27,14 +27,14 @@ func NewDbConnection() *sql.DB{
 			log.Fatal(err)
 		}
 	}
-	
+
 	// Ambil konfigurasi dari environment variable
 	config := Config{
-		Host: os.Getenv("host"),
-		Port: os.Getenv("port"),
-		User: os.Getenv("user"),
+		Host:     os.Getenv("host"),
+		Port:     os.Getenv("port"),
+		User:     os.Getenv("user"),
 		Password: os.Getenv("password"),
-		DBName: os.Getenv("dbname"),
+		DBName:   os.Getenv("dbname"),
 	}
 
 	// Buat connection string-nya (ini template sih)
