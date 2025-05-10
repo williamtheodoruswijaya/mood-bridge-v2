@@ -43,6 +43,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.POST("/register", h.UserHandler.Create)
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
+		user.GET("/all", h.UserHandler.FindAll)
 	}
 
 	return router

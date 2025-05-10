@@ -17,6 +17,7 @@ type UserService interface {
 	Create(ctx context.Context, request request.CreateUserRequest) (*response.CreateUserResponse, error)
 	Find(ctx context.Context, username string) (*response.CreateUserResponse, error)
 	FindByEmail(ctx context.Context, email string) (*response.CreateUserResponse, error)
+	FindAll(ctx context.Context) ([]*response.CreateUserResponse, error)
 }
 
 type UserServiceImpl struct {
@@ -128,6 +129,29 @@ func (s *UserServiceImpl) FindByEmail(ctx context.Context, email string) (*respo
 
 	// step 3: return response
 	return &searchedUser, nil
+}
+
+func (s *UserServiceImpl) FindAll(ctx context.Context) ([]*response.CreateUserResponse, error) {
+	// step 1: call repository to find all users
+	users, err := s.UserRepository.FindAll(ctx, s.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 2: convert result ke response
+	var userResponses []*response.CreateUserResponse
+	for _, user := range users {
+		userResponse := &response.CreateUserResponse{
+			Username:  user.Username,
+			Fullname:  user.Fullname,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt,
+		}
+		userResponses = append(userResponses, userResponse)
+	}
+
+	// step 3: return response
+	return userResponses, nil
 }
 
 // helper function

@@ -12,6 +12,7 @@ type UserRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, user *entity.User) (*entity.User, error)
 	Find(ctx context.Context, db *sql.DB, username string) (*entity.User, error)
 	FindByEmail(ctx context.Context, db *sql.DB, email string) (*entity.User, error) // for login and validation
+	FindAll(ctx context.Context, db *sql.DB) ([]*entity.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -80,4 +81,43 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, db *sql.DB, email 
 	}
 
 	return &selectedUser, err
+}
+
+func (r *UserRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity.User, error) {
+	// step 1: define query
+	query := `SELECT userid, username, fullname, profileurl, email, password, createdat FROM users;`
+
+	// step 2: execute query
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // close rows after use buat mencegah memory leak
+
+	// step 3: scan row-nya ke struct user
+	var users []*entity.User
+	for rows.Next() {
+		// Create a new User instance for each row and scan the values into it
+		var user entity.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Fullname, &user.ProfileUrl, &user.Email, &user.Password, &user.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check if ProfileUrl is NULL and set default value
+		if !user.ProfileUrl.Valid {
+			user.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		}
+
+		// Append the user to the slice
+		users = append(users, &user)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// step 4: return the slice of users
+	return users, nil
 }

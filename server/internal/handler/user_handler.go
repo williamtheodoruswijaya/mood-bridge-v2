@@ -14,6 +14,7 @@ type UserHandler interface {
 	Create(c *gin.Context)
 	Find(c *gin.Context)
 	FindByEmail(c *gin.Context)
+	FindAll(c *gin.Context)
 }
 
 type UserHandlerImpl struct {
@@ -121,6 +122,29 @@ func (h *UserHandlerImpl) FindByEmail(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
 			"message": "User found successfully",
+			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *UserHandlerImpl) FindAll(c *gin.Context) {
+	// step 1: buat context buat ngatur time-out (handle connection time-out)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// step 2: call service-nya buat find all user-nya
+	response, err := h.UserService.FindAll(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Failed to find all users",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "Users found successfully",
 			"data":    response,
 		})
 		return
