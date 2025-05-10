@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"mood-bridge-v2/server/internal/handler"
+	"mood-bridge-v2/server/internal/middleware"
 	"mood-bridge-v2/server/internal/repository"
 	"mood-bridge-v2/server/internal/service"
 
@@ -38,6 +39,9 @@ func initRoutes(h Handlers) *gin.Engine {
 	// Inisialisasi router
 	router := gin.Default()
 
+	// Terapkan middleware untuk menangani panic
+	router.Use(middleware.HandlePanic())
+
 	// Lakukan grouping
 	api := router.Group("/api")
 
@@ -45,11 +49,14 @@ func initRoutes(h Handlers) *gin.Engine {
 	user := api.Group("/user")
 	{
 		user.POST("/register", h.UserHandler.Create)
+		user.POST("/login", h.UserHandler.Login)
+		
+		user.Use(middleware.Authenticate()) // Terapkan middleware untuk semua route di bawah ini
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
 		user.GET("/all", h.UserHandler.FindAll)
-		user.POST("/login", h.UserHandler.Login)
 	}
+
 
 	return router
 }

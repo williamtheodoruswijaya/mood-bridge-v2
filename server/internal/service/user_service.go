@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"mood-bridge-v2/server/internal/entity"
 	"mood-bridge-v2/server/internal/model/request"
 	"mood-bridge-v2/server/internal/model/response"
@@ -96,7 +97,10 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 
 func (s *UserServiceImpl) Find(ctx context.Context, username string) (*response.CreateUserResponse, error) {
 	// step 1: call repository to find user
-	user, err := s.UserRepository.Find(ctx, s.DB, username)
+	user, err := s.UserRepository.Find(ctx, s.DB, strings.TrimSpace(strings.ToLower(username)))
+
+	// test error 
+	log.Println("Error:", err)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func (s *UserServiceImpl) Find(ctx context.Context, username string) (*response.
 
 func (s *UserServiceImpl) FindByEmail(ctx context.Context, email string) (*response.CreateUserResponse, error) {
 	// step 1: call repository to find user
-	user, err := s.UserRepository.FindByEmail(ctx, s.DB, email)
+	user, err := s.UserRepository.FindByEmail(ctx, s.DB, strings.TrimSpace(strings.ToLower(email)))
 	if err != nil {
 		return nil, err
 	}
