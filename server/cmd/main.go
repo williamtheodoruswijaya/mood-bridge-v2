@@ -11,7 +11,7 @@ func main() {
 	defer database.Close()
 
 	// Setelah itu kita akan migrasi database-nya
-	// db.Migrate(database)
+	db.Migrate(database, "up")
 
 	// Terakhir kita jalankan server-nya
 	router := api.SetupRoutes(database)
