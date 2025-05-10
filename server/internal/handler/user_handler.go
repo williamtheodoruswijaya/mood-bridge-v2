@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type UserHandler interface {
@@ -15,15 +16,18 @@ type UserHandler interface {
 	Find(c *gin.Context)
 	FindByEmail(c *gin.Context)
 	FindAll(c *gin.Context)
+	Login(c *gin.Context)
 }
 
 type UserHandlerImpl struct {
 	UserService service.UserService
+	validate validator.Validate // nyobain pake validator buat validasi request
 }
 
-func NewUserHandler(userService service.UserService) UserHandler {
+func NewUserHandler(userService service.UserService, validate validator.Validate) UserHandler {
 	return &UserHandlerImpl{
 		UserService: userService,
+		validate:    validate,
 	}
 }
 
@@ -146,6 +150,49 @@ func (h *UserHandlerImpl) FindAll(c *gin.Context) {
 			"code":    http.StatusOK,
 			"message": "Users found successfully",
 			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *UserHandlerImpl) Login(c *gin.Context) {
+	// step 1: ambil request dari body sekaligus validasi
+	var request request.ValidateUserRequest
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid request",
+		})
+		return
+	}
+	// Validasi request (apakah sama dengan struct atau engga)
+	err = h.validate.Struct(request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid request",
+		})
+		return
+	}
+
+	// step 2: buat context buat ngatur time-out (handle connection time-out)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// step 3: call service-nya buat login user-nya
+	token, err := h.UserService.Login(ctx, request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Failed to login user",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "User logged in successfully",
+			"data":    token,
 		})
 		return
 	}

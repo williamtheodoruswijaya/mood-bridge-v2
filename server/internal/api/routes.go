@@ -7,6 +7,7 @@ import (
 	"mood-bridge-v2/server/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 // step 1: define sebuah Handler sebagai struct yang akan digunakan untuk mengumpulkan semua handler yang ada dalam rest api kita.
@@ -20,10 +21,13 @@ func SetupRoutes(db *sql.DB) *gin.Engine {
 }
 
 func initHandler(db *sql.DB) Handlers {
+	// Inisialisasi validator juga
+	validator := validator.New()
+
 	// Inisialisasi repository, handler, dan services disini
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(db, userRepository)
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, *validator)
 
 	return Handlers{
 		UserHandler: userHandler,
@@ -44,6 +48,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
 		user.GET("/all", h.UserHandler.FindAll)
+		user.POST("/login", h.UserHandler.Login)
 	}
 
 	return router

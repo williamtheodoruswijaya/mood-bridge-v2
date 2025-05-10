@@ -8,7 +8,7 @@ import (
 	"mood-bridge-v2/server/internal/model/request"
 	"mood-bridge-v2/server/internal/model/response"
 	"mood-bridge-v2/server/internal/repository"
-	"regexp"
+	"mood-bridge-v2/server/internal/utils"
 	"strings"
 	"time"
 )
@@ -18,6 +18,7 @@ type UserService interface {
 	Find(ctx context.Context, username string) (*response.CreateUserResponse, error)
 	FindByEmail(ctx context.Context, email string) (*response.CreateUserResponse, error)
 	FindAll(ctx context.Context) ([]*response.CreateUserResponse, error)
+	Login(ctx context.Context, request request.ValidateUserRequest) (*string, error)
 }
 
 type UserServiceImpl struct {
@@ -57,7 +58,7 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 	}
 	
 	// Appendix: validate request
-	if err := validateUserInput(&user); err != nil {
+	if err := utils.ValidateUserInput(&user); err != nil {
 		return nil, err
 	}
 
@@ -154,28 +155,42 @@ func (s *UserServiceImpl) FindAll(ctx context.Context) ([]*response.CreateUserRe
 	return userResponses, nil
 }
 
-// helper function
-func validateUserInput(user *entity.User) error {
-	if user.Username == "" || user.Fullname == "" || user.Email == "" || user.Password == "" {
-		return fmt.Errorf("username, fullname, email, and password are required")
-	}
-	if len(user.Password) < 8 {
-		return fmt.Errorf("password must be at least 8 characters long")
-	}
-	if len(user.Username) < 3 {
-		return fmt.Errorf("username must be at least 3 characters long")
-	}
-	if len(user.Fullname) < 3 {
-		return fmt.Errorf("fullname must be at least 3 characters long")
+func (s *UserServiceImpl) Login(ctx context.Context, request request.ValidateUserRequest) (*string, error) {
+	// step 1: validate request
+	err := utils.ValidateUserLoginInput(request.Username, request.Password)
+	if err != nil {
+		return nil, err
 	}
 
-	// check email format using regex
-	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
-	matched, err := regexp.MatchString(emailRegex, user.Email)
-	if err != nil || !matched {
-		return fmt.Errorf("invalid email format")
+	// step 2: call repository to find user by Username
+	user, err := s.UserRepository.Find(ctx, s.DB, request.Username)
+	if err != nil {
+		return nil, err
 	}
 
-	// Kalau semua aman, kita return nil
-	return nil
+	// step 3: check if user is found
+	if user == nil {
+		return nil, fmt.Errorf("user %s not found", request.Username)
+	}
+
+	// step 4: validate password
+	if user.Password != request.Password {
+		return nil, fmt.Errorf("invalid password")
+	}
+
+	// step 5: get user response
+	userResponse := &response.CreateUserResponse{
+		Username:  user.Username,
+		Fullname:  user.Fullname,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}
+
+	// step 6: generate token
+	token, err := GenerateToken(userResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
