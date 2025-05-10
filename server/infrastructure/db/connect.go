@@ -22,7 +22,7 @@ func NewDbConnection() *sql.DB {
 	// Load .env file-nya
 	err := godotenv.Load()
 	if err != nil {
-		err = godotenv.Load("../../.env")
+		err = godotenv.Load("../.env")
 		if err != nil {
 			log.Fatal(err)
 		}

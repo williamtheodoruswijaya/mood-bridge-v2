@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"log"
 	"mood-bridge-v2/server/internal/model/request"
 	"mood-bridge-v2/server/internal/service"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 type UserHandler interface {
 	Create(c *gin.Context)
 	Find(c *gin.Context)
+	FindByEmail(c *gin.Context)
 }
 
 type UserHandlerImpl struct {
@@ -44,11 +44,10 @@ func (h *UserHandlerImpl) Create(c *gin.Context) {
 
 	// step 3: call service-nya buat create task-nya
 	response, err := h.UserService.Create(ctx, request)
-	log.Println(err)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
-			"message": "Failed to create user",
+			"message": err.Error(),
 		})
 		return
 	} else {
@@ -82,6 +81,40 @@ func (h *UserHandlerImpl) Find(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
 			"message": "Failed to find user",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "User found successfully",
+			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *UserHandlerImpl) FindByEmail(c *gin.Context) {
+	// step 1: ambil email dari params
+	email := c.Query("email")
+	
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Email is required",
+		})
+		return
+	}
+
+	// step 2: buat context buat ngatur time-out (handle connection time-out)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// step 3: call service-nya buat find user-nya
+	response, err := h.UserService.FindByEmail(ctx, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Failed to find user with this email",
 		})
 		return
 	} else {

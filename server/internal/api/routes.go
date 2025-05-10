@@ -39,8 +39,11 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	// Buat routes untuk user
 	user := api.Group("/user")
-	user.POST("/register", h.UserHandler.Create)
-	user.GET("/find/:username", h.UserHandler.Find)
+	{
+		user.POST("/register", h.UserHandler.Create)
+		user.GET("/by-username/:username", h.UserHandler.Find)
+		user.GET("/by-email", h.UserHandler.FindByEmail)
+	}
 
 	return router
 }
