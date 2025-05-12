@@ -5,6 +5,7 @@ import (
 	"mood-bridge-v2/server/internal/model/request"
 	"mood-bridge-v2/server/internal/service"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ type UserHandler interface {
 	Create(c *gin.Context)
 	Find(c *gin.Context)
 	FindByEmail(c *gin.Context)
+	FindByID(c *gin.Context)
 	FindAll(c *gin.Context)
 	Login(c *gin.Context)
 }
@@ -120,6 +122,48 @@ func (h *UserHandlerImpl) FindByEmail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
 			"message": "Failed to find user with this email",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "User found successfully",
+			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *UserHandlerImpl) FindByID(c *gin.Context) {
+	// step 1: ambil username dari path
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "ID is required",
+		})
+		return
+	}
+	// step 1.1: convert id ke int
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid ID format",
+		})
+		return
+	}
+
+	// step 2: buat context buat ngatur time-out (handle connection time-out)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// step 3: call service-nya buat find user-nya
+	response, err := h.UserService.FindByID(ctx, idInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Failed to find user",
 		})
 		return
 	} else {

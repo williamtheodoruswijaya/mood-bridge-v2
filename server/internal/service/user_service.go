@@ -18,6 +18,7 @@ type UserService interface {
 	Create(ctx context.Context, request request.CreateUserRequest) (*response.CreateUserResponse, error)
 	Find(ctx context.Context, username string) (*response.CreateUserResponse, error)
 	FindByEmail(ctx context.Context, email string) (*response.CreateUserResponse, error)
+	FindByID(ctx context.Context, id int) (*response.CreateUserResponse, error)
 	FindAll(ctx context.Context) ([]*response.CreateUserResponse, error)
 	Login(ctx context.Context, request request.ValidateUserRequest) (*string, error)
 }
@@ -133,6 +134,22 @@ func (s *UserServiceImpl) FindByEmail(ctx context.Context, email string) (*respo
 	}
 
 	// step 3: return response
+	return &searchedUser, nil
+}
+
+func (s *UserServiceImpl) FindByID(ctx context.Context, id int) (*response.CreateUserResponse, error) {
+	user, err := s.UserRepository.FindByID(ctx, s.DB, id)
+	if err != nil {
+		return nil, err
+	}
+
+	searchedUser := response.CreateUserResponse{
+		Username:  user.Username,
+		Fullname:  user.Fullname,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}
+
 	return &searchedUser, nil
 }
 

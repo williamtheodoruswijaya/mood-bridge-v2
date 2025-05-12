@@ -11,6 +11,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, user *entity.User) (*entity.User, error)
 	Find(ctx context.Context, db *sql.DB, username string) (*entity.User, error)
+	FindByID(ctx context.Context, db *sql.DB, id int) (*entity.User, error)
 	FindByEmail(ctx context.Context, db *sql.DB, email string) (*entity.User, error) // for login and validation
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.User, error)
 }
@@ -53,9 +54,32 @@ func (r *UserRepositoryImpl) Find(ctx context.Context, db *sql.DB, username stri
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		selectedUser.ProfileUrl = sql.NullString{
+			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
+			Valid:  true,
+		}
 	}
 
+	return &selectedUser, err
+}
+
+func (r *UserRepositoryImpl) FindByID(ctx context.Context, db *sql.DB, id int) (*entity.User, error) {
+	query := `SELECT userid, username, fullname, profileurl, email, password, createdat FROM users WHERE userid = $1;`
+	row := db.QueryRowContext(ctx, query, id)
+	var selectedUser entity.User
+	err := row.Scan(&selectedUser.ID, &selectedUser.Username, &selectedUser.Fullname, &selectedUser.ProfileUrl, &selectedUser.Email, &selectedUser.Password, &selectedUser.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	if !selectedUser.ProfileUrl.Valid {
+		selectedUser.ProfileUrl = sql.NullString{
+			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
+			Valid:  true,
+		}
+	}
 	return &selectedUser, err
 }
 
@@ -77,7 +101,10 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, db *sql.DB, email 
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		selectedUser.ProfileUrl = sql.NullString{
+			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
+			Valid:  true,
+		}
 	}
 
 	return &selectedUser, err

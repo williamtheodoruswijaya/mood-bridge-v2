@@ -54,6 +54,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.Use(middleware.Authenticate()) // Terapkan middleware untuk semua route di bawah ini
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
+		user.GET("/by-id/:id", h.UserHandler.FindByID)
 		user.GET("/all", h.UserHandler.FindAll)
 	}
 
