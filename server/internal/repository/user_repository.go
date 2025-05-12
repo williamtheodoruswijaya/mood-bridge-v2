@@ -54,10 +54,7 @@ func (r *UserRepositoryImpl) Find(ctx context.Context, db *sql.DB, username stri
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl = sql.NullString{
-			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
-			Valid:  true,
-		}
+		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
 	}
 
 	return &selectedUser, err
@@ -75,10 +72,7 @@ func (r *UserRepositoryImpl) FindByID(ctx context.Context, db *sql.DB, id int) (
 		return nil, err
 	}
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl = sql.NullString{
-			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
-			Valid:  true,
-		}
+		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
 	}
 	return &selectedUser, err
 }
@@ -101,10 +95,7 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, db *sql.DB, email 
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl = sql.NullString{
-			String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", // Default value if NULL
-			Valid:  true,
-		}
+		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
 	}
 
 	return &selectedUser, err

@@ -14,6 +14,7 @@ import (
 // step 1: define sebuah Handler sebagai struct yang akan digunakan untuk mengumpulkan semua handler yang ada dalam rest api kita.
 type Handlers struct {
 	UserHandler handler.UserHandler
+	PostHandler handler.PostHandler
 }
 
 // step 2: buat method untuk setiap route yang ada dalam api kita. misal kita mau bikin route untuk create user, kita bisa bikin method CreateUser
@@ -30,8 +31,13 @@ func initHandler(db *sql.DB) Handlers {
 	userService := service.NewUserService(db, userRepository)
 	userHandler := handler.NewUserHandler(userService, *validator)
 
+	postRepository := repository.NewPostRepository()
+	postService := service.NewPostService(db, postRepository, userRepository)
+	postHandler := handler.NewPostHandler(postService, *validator)
+
 	return Handlers{
 		UserHandler: userHandler,
+		PostHandler: postHandler,
 	}
 }
 
@@ -51,11 +57,18 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.POST("/register", h.UserHandler.Create)
 		user.POST("/login", h.UserHandler.Login)
 		
-		user.Use(middleware.Authenticate()) // Terapkan middleware untuk semua route di bawah ini
+		user.Use(middleware.Authenticate())
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
 		user.GET("/by-id/:id", h.UserHandler.FindByID)
 		user.GET("/all", h.UserHandler.FindAll)
+	}
+
+	post := api.Group("/post")
+	{
+		post.Use(middleware.Authenticate())
+		post.POST("/create", h.PostHandler.Create)
+		post.GET("/by-id/:id", h.PostHandler.Find)
 	}
 
 

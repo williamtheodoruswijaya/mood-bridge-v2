@@ -8,6 +8,7 @@ import (
 
 type PostRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, post *entity.Post) (*entity.Post, error)
+	Find(ctx context.Context, db *sql.DB, postID int) (*entity.Post, error)
 }
 
 type PostRepositoryImpl struct {
@@ -28,4 +29,21 @@ func (r *PostRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, post *entit
 		return nil, err
 	}
 	return &createdPost, nil
+}
+
+func (r *PostRepositoryImpl) Find(ctx context.Context, db *sql.DB, postID int) (*entity.Post, error) {
+	query := `SELECT postid, userid, content, mood, createdat FROM posts WHERE postid = $1;`
+
+	row := db.QueryRowContext(ctx, query, postID)
+
+	var selectedPost entity.Post
+	err := row.Scan(&selectedPost.PostID, &selectedPost.UserID, &selectedPost.Content, &selectedPost.Mood, &selectedPost.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Post not found
+		}
+		return nil, err // Other error
+	}
+	
+	return &selectedPost, nil
 }
