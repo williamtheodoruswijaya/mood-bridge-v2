@@ -10,6 +10,7 @@ type PostRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, post *entity.Post) (*entity.Post, error)
 	Find(ctx context.Context, db *sql.DB, postID int) (*entity.Post, error)
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error)
+	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
 }
 
 type PostRepositoryImpl struct {
@@ -52,6 +53,28 @@ func (r *PostRepositoryImpl) Find(ctx context.Context, db *sql.DB, postID int) (
 func (r *PostRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error) {
 	query := `SELECT postid, userid, content, mood, createdat FROM posts;`
 	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var posts []*entity.Post
+	for rows.Next() {
+		var post entity.Post
+		err := rows.Scan(&post.PostID, &post.UserID, &post.Content, &post.Mood, &post.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &post)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
+func (r *PostRepositoryImpl) FindByUserID(ctx context.Context, db *sql.DB, userID int) ([]*entity.Post, error) {
+	query := `SELECT postid, userid, content, mood, createdat FROM posts WHERE userid = $1;`
+	rows, err := db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}

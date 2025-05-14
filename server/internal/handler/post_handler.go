@@ -16,6 +16,7 @@ type PostHandler interface {
 	Create (c *gin.Context)
 	Find (c *gin.Context)
 	FindAll (c *gin.Context)
+	FindByUserID (c *gin.Context)
 }
 
 type PostHandlerImpl struct {
@@ -92,6 +93,12 @@ func (h *PostHandlerImpl) Find(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	} else if response == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    http.StatusNotFound,
+			"message": "Post not found",
+		})
+		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
@@ -111,6 +118,56 @@ func(h *PostHandlerImpl) FindAll(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
 			"message": err.Error(),
+		})
+		return
+	} else if len(response) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    http.StatusNotFound,
+			"message": "No posts found",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "Success",
+			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *PostHandlerImpl) FindByUserID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "User ID is required",
+		})
+		return
+	}
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid User ID format",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	response, err := h.PostService.FindByUserID(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": err.Error(),
+		})
+		return
+	} else if len(response) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    http.StatusNotFound,
+			"message": "No posts found for this user",
 		})
 		return
 	} else {

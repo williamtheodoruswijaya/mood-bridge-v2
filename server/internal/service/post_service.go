@@ -16,6 +16,7 @@ type PostService interface {
 	Create(ctx context.Context, req request.CreatePostRequest, moodRequest request.MoodPredictionRequest) (*response.CreatePostResponse, error)
 	Find(ctx context.Context, postID int) (*response.CreatePostResponse, error)
 	FindAll(ctx context.Context) ([]*response.CreatePostResponse, error)
+	FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
 }
 
 type PostServiceImpl struct {
@@ -165,5 +166,56 @@ func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostRe
 	if len(postResponses) == 0 {
 		return nil, fmt.Errorf("no posts found")
 	}
+	return postResponses, nil
+}
+
+func (s *PostServiceImpl) FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error) {
+	// step 1: validate if user exists
+	user, err := s.UserRepository.FindByID(ctx, s.DB, userID)
+	if err != nil || user == nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user with ID %d not found", userID)
+		}
+		return nil, err
+	}
+
+	// step 2: find posts by userID
+	posts, err := s.PostRepository.FindByUserID(ctx, s.DB, userID)
+	if err != nil {
+		if err == sql.ErrNoRows || posts == nil {
+			return nil, fmt.Errorf("no posts found for user with ID %d", userID)
+		}
+		return nil, err
+	}
+
+	var postResponses []*response.CreatePostResponse
+	for _, post := range posts {
+		user, err := s.UserRepository.FindByID(ctx, s.DB, post.UserID)
+		if err != nil {
+			if err == sql.ErrNoRows || user == nil {
+				return nil, fmt.Errorf("user with ID %d not found", post.UserID)
+			}
+			return nil, err
+		}
+		postResponse := &response.CreatePostResponse{
+			PostID:    post.PostID,
+			UserID:    post.UserID,
+			User: response.UserSummary{
+				UserID: user.ID,
+				Username: user.Username,
+				FullName: user.Fullname,
+			},
+			Content:   post.Content,
+			Mood:      post.Mood,
+			CreatedAt:  post.CreatedAt,
+		}
+		postResponses = append(postResponses, postResponse)
+	}
+
+	// Check if any posts were found
+	if len(postResponses) == 0 {
+		return nil, fmt.Errorf("no posts found for user with ID %d", userID)
+	}
+
 	return postResponses, nil
 }
