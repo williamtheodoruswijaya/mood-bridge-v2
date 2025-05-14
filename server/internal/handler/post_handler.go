@@ -15,6 +15,7 @@ import (
 type PostHandler interface {
 	Create (c *gin.Context)
 	Find (c *gin.Context)
+	FindAll (c *gin.Context)
 }
 
 type PostHandlerImpl struct {
@@ -85,6 +86,27 @@ func (h *PostHandlerImpl) Find(c *gin.Context) {
 	defer cancel()
 
 	response, err := h.PostService.Find(ctx, postID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": err.Error(),
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "Success",
+			"data":    response,
+		})
+		return
+	}
+}
+
+func(h *PostHandlerImpl) FindAll(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	response, err := h.PostService.FindAll(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
