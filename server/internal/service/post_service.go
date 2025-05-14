@@ -13,7 +13,7 @@ import (
 )
 
 type PostService interface {
-	Create(ctx context.Context, request request.CreatePostRequest) (*response.CreatePostResponse, error)
+	Create(ctx context.Context, req request.CreatePostRequest, moodRequest request.MoodPredictionRequest) (*response.CreatePostResponse, error)
 	Find(ctx context.Context, postID int) (*response.CreatePostResponse, error)
 }
 
@@ -21,17 +21,19 @@ type PostServiceImpl struct {
 	DB *sql.DB
 	PostRepository repository.PostRepository
 	UserRepository repository.UserRepository
+	MoodService MoodPredictionService
 }
 
-func NewPostService(db *sql.DB, postRepository repository.PostRepository, userRepository repository.UserRepository) PostService {
+func NewPostService(db *sql.DB, postRepository repository.PostRepository, userRepository repository.UserRepository, moodService MoodPredictionService) PostService {
 	return &PostServiceImpl {
 		DB: db,
 		PostRepository: postRepository,
 		UserRepository: userRepository,
+		MoodService: moodService,
 	}
 }
 
-func (s *PostServiceImpl) Create(ctx context.Context, request request.CreatePostRequest) (*response.CreatePostResponse, error) {
+func (s *PostServiceImpl) Create(ctx context.Context, req request.CreatePostRequest, moodRequest request.MoodPredictionRequest) (*response.CreatePostResponse, error) {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -43,10 +45,28 @@ func (s *PostServiceImpl) Create(ctx context.Context, request request.CreatePost
 		}
 	}()
 
+	// Validate if user exists
+	user, err := s.UserRepository.FindByID(ctx, s.DB, req.UserID)
+	if err != nil || user == nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user with ID %d not found", req.UserID)
+		}
+		return nil, err
+	}
+
+	// Predict mood from content using MoodPredictionService
+	moodInput := request.MoodPredictionRequest{
+		Input: req.Content,
+	}
+	moodResp, err := s.MoodService.PredictMood(ctx, moodInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to predict mood: %v", err)
+	}
+
 	post := entity.Post{
-		UserID: request.UserID,
-		Content: request.Content,
-		Mood: request.Mood,
+		UserID: req.UserID,
+		Content: req.Content,
+		Mood: moodResp.Prediction,
 		CreatedAt: time.Now(),
 	}
 
@@ -54,18 +74,7 @@ func (s *PostServiceImpl) Create(ctx context.Context, request request.CreatePost
 		return nil, err
 	}
 
-	// Validate if user exists\
-	user, err := s.UserRepository.FindByID(ctx, s.DB, post.UserID)
-	if err != nil || user == nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with ID %d not found", post.UserID)
-		}
-		return nil, err
-	}
-
-	// Pada bagian ini kita akan hit api streamlit untuk mendapatkan mood dari content
-
-	// Create Post
+	// Create Post (store ke dalam database)
 	createdPost, err := s.PostRepository.Create(ctx, tx, &post)
 	if err != nil {
 		return nil, err

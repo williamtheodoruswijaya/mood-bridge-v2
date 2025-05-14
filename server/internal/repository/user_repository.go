@@ -54,7 +54,7 @@ func (r *UserRepositoryImpl) Find(ctx context.Context, db *sql.DB, username stri
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		selectedUser.ProfileUrl.String = defaultProfileUrl // Default value if NULL
 	}
 
 	return &selectedUser, err
@@ -72,7 +72,7 @@ func (r *UserRepositoryImpl) FindByID(ctx context.Context, db *sql.DB, id int) (
 		return nil, err
 	}
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		selectedUser.ProfileUrl.String = defaultProfileUrl // Default value if NULL
 	}
 	return &selectedUser, err
 }
@@ -95,7 +95,7 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, db *sql.DB, email 
 	}
 
 	if !selectedUser.ProfileUrl.Valid {
-		selectedUser.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+		selectedUser.ProfileUrl.String = defaultProfileUrl // Default value if NULL
 	}
 
 	return &selectedUser, err
@@ -124,7 +124,7 @@ func (r *UserRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity
 
 		// Check if ProfileUrl is NULL and set default value
 		if !user.ProfileUrl.Valid {
-			user.ProfileUrl.String = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" // Default value if NULL
+			user.ProfileUrl.String = defaultProfileUrl // Default value if NULL
 		}
 
 		// Append the user to the slice
@@ -139,3 +139,5 @@ func (r *UserRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity
 	// step 4: return the slice of users
 	return users, nil
 }
+
+const defaultProfileUrl = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"

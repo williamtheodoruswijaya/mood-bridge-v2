@@ -32,7 +32,7 @@ func initHandler(db *sql.DB) Handlers {
 	userHandler := handler.NewUserHandler(userService, *validator)
 
 	postRepository := repository.NewPostRepository()
-	postService := service.NewPostService(db, postRepository, userRepository)
+	postService := service.NewPostService(db, postRepository, userRepository, service.NewMoodPredictionService())
 	postHandler := handler.NewPostHandler(postService, *validator)
 
 	return Handlers{

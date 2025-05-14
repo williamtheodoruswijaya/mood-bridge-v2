@@ -30,8 +30,8 @@ func NewPostHandler(postService service.PostService, validate validator.Validate
 }
 
 func (h *PostHandlerImpl) Create(c *gin.Context) {
-	var request request.CreatePostRequest
-	err := c.ShouldBindJSON(&request)
+	var req request.CreatePostRequest
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    http.StatusBadRequest,
@@ -43,7 +43,9 @@ func (h *PostHandlerImpl) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	response, err := h.PostService.Create(ctx, request)
+	response, err := h.PostService.Create(ctx, req, request.MoodPredictionRequest{
+		Input: req.Content,
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
