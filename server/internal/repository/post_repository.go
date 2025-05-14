@@ -11,6 +11,7 @@ type PostRepository interface {
 	Find(ctx context.Context, db *sql.DB, postID int) (*entity.Post, error)
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error)
 	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
+	Update(ctx context.Context, db *sql.DB, postID int, post *entity.Post) (*entity.Post, error)
 }
 
 type PostRepositoryImpl struct {
@@ -92,4 +93,26 @@ func (r *PostRepositoryImpl) FindByUserID(ctx context.Context, db *sql.DB, userI
 		return nil, err
 	}
 	return posts, nil
+}
+
+func (r *PostRepositoryImpl) Update(ctx context.Context, db *sql.DB, postID int, post *entity.Post) (*entity.Post, error) {
+	// set query-nya
+	query := `UPDATE posts SET content = $1, mood = $2 WHERE postid = $3 RETURNING postid, userid, content, mood, createdat`
+
+	// jalankan query-nya
+	row := db.QueryRowContext(ctx, query, post.Content, post.Mood, postID)
+
+	// buat variable untuk menampung hasil query
+	var updatedPost entity.Post
+
+	// scan hasil query ke variable
+	err := row.Scan(&updatedPost.PostID, &updatedPost.UserID, &updatedPost.Content, &updatedPost.Mood, &updatedPost.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Post not found
+		}
+		return nil, err // Other error
+	}
+
+	return &updatedPost, nil
 }

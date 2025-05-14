@@ -13,10 +13,11 @@ import (
 )
 
 type PostService interface {
-	Create(ctx context.Context, req request.CreatePostRequest, moodRequest request.MoodPredictionRequest) (*response.CreatePostResponse, error)
+	Create(ctx context.Context, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 	Find(ctx context.Context, postID int) (*response.CreatePostResponse, error)
 	FindAll(ctx context.Context) ([]*response.CreatePostResponse, error)
 	FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
+	Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 }
 
 type PostServiceImpl struct {
@@ -35,7 +36,7 @@ func NewPostService(db *sql.DB, postRepository repository.PostRepository, userRe
 	}
 }
 
-func (s *PostServiceImpl) Create(ctx context.Context, req request.CreatePostRequest, moodRequest request.MoodPredictionRequest) (*response.CreatePostResponse, error) {
+func (s *PostServiceImpl) Create(ctx context.Context, req request.CreatePostRequest) (*response.CreatePostResponse, error) {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -218,4 +219,64 @@ func (s *PostServiceImpl) FindByUserID(ctx context.Context, userID int) ([]*resp
 	}
 
 	return postResponses, nil
+}
+
+func (s *PostServiceImpl) Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error) {
+	// Validate if post exists
+	post, err := s.PostRepository.Find(ctx, s.DB, postID)
+	if err != nil {
+		if err == sql.ErrNoRows || post == nil {
+			return nil, fmt.Errorf("post with ID %d not found", postID)
+		}
+		return nil, err
+	}
+
+	// Validate if user exists
+	user, err := s.UserRepository.FindByID(ctx, s.DB, post.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows || user == nil {
+			return nil, fmt.Errorf("user with ID %d not found", post.UserID)
+		}
+		return nil, err
+	}
+
+	// Ambil data mood dari MoodPredictionService
+	moodPrediction := request.MoodPredictionRequest{
+		Input: req.Content,
+	}
+	moodResp, err := s.MoodService.PredictMood(ctx, moodPrediction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to predict mood: %v", err)
+	}
+
+	// Validate post content and mood
+	if err := utils.ValidatePostInput(req.Content, moodResp.Prediction); err != nil {
+		return nil, err
+	}
+
+	// Update post
+	post.Content = req.Content
+	post.Mood = moodResp.Prediction
+	post.CreatedAt = time.Now()
+
+	updatedPost, err := s.PostRepository.Update(ctx, s.DB, postID, post)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to response
+	postResponse := &response.CreatePostResponse{
+		PostID:    updatedPost.PostID,
+		UserID:    updatedPost.UserID,
+		User: response.UserSummary{
+			UserID: user.ID,
+			Username: user.Username,
+			FullName: user.Fullname,
+		},
+		Content:   updatedPost.Content,
+		Mood:      updatedPost.Mood,
+		CreatedAt:  updatedPost.CreatedAt,
+	}
+
+	return postResponse, nil
 }
