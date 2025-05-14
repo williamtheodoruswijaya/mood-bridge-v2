@@ -19,6 +19,7 @@ type UserHandler interface {
 	FindByID(c *gin.Context)
 	FindAll(c *gin.Context)
 	Login(c *gin.Context)
+	Update(c *gin.Context)
 }
 
 type UserHandlerImpl struct {
@@ -237,6 +238,59 @@ func (h *UserHandlerImpl) Login(c *gin.Context) {
 			"code":    http.StatusOK,
 			"message": "User logged in successfully",
 			"data":    token,
+		})
+		return
+	}
+}
+
+func (h *UserHandlerImpl) Update(c *gin.Context) {
+	// step 1: ambil id dari path
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "ID is required",
+		})
+		return
+	}
+	// step 1.1: convert id ke int
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid ID format",
+		})
+		return
+	}
+
+	// step 2: ambil request dari body
+	var request request.UpdateUserRequest
+	err = c.ShouldBindJSON(&request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid request",
+		})
+		return
+	}
+
+	// step 3: buat context buat ngatur time-out (handle connection time-out)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// step 4: call service-nya buat update user-nya
+	response, err := h.UserService.Update(ctx, idInt, request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Failed to update user",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "User updated successfully",
+			"data":    response,
 		})
 		return
 	}

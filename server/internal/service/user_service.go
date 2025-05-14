@@ -21,6 +21,7 @@ type UserService interface {
 	FindByID(ctx context.Context, id int) (*response.CreateUserResponse, error)
 	FindAll(ctx context.Context) ([]*response.CreateUserResponse, error)
 	Login(ctx context.Context, request request.ValidateUserRequest) (*string, error)
+	Update(ctx context.Context, id int, request request.UpdateUserRequest) (*response.CreateUserResponse, error)
 }
 
 type UserServiceImpl struct {
@@ -214,4 +215,55 @@ func (s *UserServiceImpl) Login(ctx context.Context, request request.ValidateUse
 	}
 
 	return token, nil
+}
+
+func (s *UserServiceImpl) Update(ctx context.Context, id int, request request.UpdateUserRequest) (*response.CreateUserResponse, error) {
+	// step 1: begin transaction
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	// step 2: rollback
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// step 3: convert request ke model User
+	user := entity.User{
+		Username:   strings.TrimSpace(strings.ToLower(request.Username)),
+		Fullname:   request.Fullname,
+		Email:      strings.TrimSpace(strings.ToLower(request.Email)),
+		Password:   request.Password,
+		ProfileUrl: sql.NullString{String: request.Profile, Valid: true},
+		CreatedAt:  time.Now(),
+	}
+
+	// step 4: validate request
+	if err := utils.ValidateUserInput(&user); err != nil {
+		return nil, err
+	}
+
+	// step 5: call repository to update user
+	updatedUser, err := s.UserRepository.Update(ctx, tx, id, &user)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 6: commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	// step 7: Find the updated user
+	result, err := s.FindByID(ctx, updatedUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 8: return response
+	return result, nil
 }

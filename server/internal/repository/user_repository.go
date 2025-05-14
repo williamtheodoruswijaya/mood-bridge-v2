@@ -14,6 +14,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, db *sql.DB, id int) (*entity.User, error)
 	FindByEmail(ctx context.Context, db *sql.DB, email string) (*entity.User, error) // for login and validation
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.User, error)
+	Update(ctx context.Context, tx *sql.Tx, id int, user *entity.User) (*entity.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -138,6 +139,22 @@ func (r *UserRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity
 
 	// step 4: return the slice of users
 	return users, nil
+}
+
+func (r *UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, id int, user *entity.User) (*entity.User, error) {
+	// step 1: define query-nya
+	query := `UPDATE users SET username = $1, fullname = $2, email = $3, password = $4, profileurl = $5 WHERE userid = $6 RETURNING userid, username, fullname, email, password, profileurl, createdat`
+
+	// step 2: execute query-nya
+	row := tx.QueryRowContext(ctx, query, user.Username, user.Fullname, user.Email, user.Password, user.ProfileUrl.String, id)
+
+	// step 3: scan hasilnya ke dalam struct user untuk di return.
+	var updatedUser entity.User
+	err := row.Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Fullname, &updatedUser.Email, &updatedUser.Password, &updatedUser.ProfileUrl, &updatedUser.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &updatedUser, err
 }
 
 const defaultProfileUrl = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"

@@ -62,6 +62,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.GET("/by-email", h.UserHandler.FindByEmail)
 		user.GET("/by-id/:id", h.UserHandler.FindByID)
 		user.GET("/all", h.UserHandler.FindAll)
+		user.PUT("/update/:id", h.UserHandler.Update)
 	}
 
 	post := api.Group("/post")
