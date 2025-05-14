@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"mood-bridge-v2/server/internal/entity"
+	"strings"
 )
 
 type UserRepository interface {
@@ -15,6 +16,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, db *sql.DB, email string) (*entity.User, error) // for login and validation
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.User, error)
 	Update(ctx context.Context, tx *sql.Tx, id int, user *entity.User) (*entity.User, error)
+	FindByIDs(ctx context.Context, db *sql.DB, ids []int) ([]*entity.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -155,6 +157,52 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, id int, use
 		return nil, err
 	}
 	return &updatedUser, err
+}
+
+func (r *UserRepositoryImpl) FindByIDs(ctx context.Context, db *sql.DB, ids []int) ([]*entity.User, error) {
+	if len(ids) == 0 {
+		return []*entity.User{}, nil
+	}
+
+	// step 1: buat placeholder untuk query (sesuai jumlah ids)
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	// step 2: buat query-nya
+	query := fmt.Sprintf("SELECT userid, username, fullname, profileurl, email, password, createdat FROM users WHERE userid IN (%s)", strings.Join(placeholders, ","))
+
+	// step 3: execute query-nya
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // close rows after use buat mencegah memory leak
+
+	// step 4: scan row-nya ke struct user
+	var users []*entity.User
+	for rows.Next() {
+		var user entity.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Fullname, &user.ProfileUrl, &user.Email, &user.Password, &user.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		if !user.ProfileUrl.Valid {
+			user.ProfileUrl.String = defaultProfileUrl // Default value if NULL
+		}
+		users = append(users, &user)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// step 5: return the slice of users
+	return users, nil
 }
 
 const defaultProfileUrl = "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"

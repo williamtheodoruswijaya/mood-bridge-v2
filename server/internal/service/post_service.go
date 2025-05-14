@@ -118,7 +118,7 @@ func (s *PostServiceImpl) Find(ctx context.Context, postID int) (*response.Creat
 		}
 	}
 
-	// Start step 1 kalau step 0 gagal: validate if post exists
+	// Start step 1 kalau step 0 gagal: cari post-nya di database
 	post, err := s.PostRepository.Find(ctx, s.DB, postID)
 	if err != nil {
 		if err == sql.ErrNoRows || post == nil {
