@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"mood-bridge-v2/server/internal/entity"
 	"mood-bridge-v2/server/internal/model/request"
@@ -10,6 +11,8 @@ import (
 	"mood-bridge-v2/server/internal/repository"
 	"mood-bridge-v2/server/internal/utils"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type PostService interface {
@@ -26,16 +29,20 @@ type PostServiceImpl struct {
 	PostRepository repository.PostRepository
 	UserRepository repository.UserRepository
 	MoodService MoodPredictionService
+	RedisClient *redis.Client
 }
 
-func NewPostService(db *sql.DB, postRepository repository.PostRepository, userRepository repository.UserRepository, moodService MoodPredictionService) PostService {
+func NewPostService(db *sql.DB, postRepository repository.PostRepository, userRepository repository.UserRepository, moodService MoodPredictionService, redisClient *redis.Client) PostService {
 	return &PostServiceImpl {
 		DB: db,
 		PostRepository: postRepository,
 		UserRepository: userRepository,
 		MoodService: moodService,
+		RedisClient: redisClient,
 	}
 }
+
+const cacheVersion = 1
 
 func (s *PostServiceImpl) Create(ctx context.Context, req request.CreatePostRequest) (*response.CreatePostResponse, error) {
 	tx, err := s.DB.Begin()
@@ -94,10 +101,24 @@ func (s *PostServiceImpl) Create(ctx context.Context, req request.CreatePostRequ
 		return nil, err
 	}
 
+	// Invalidate the "post:all" cache after post creation
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("post:all:v%d", cacheVersion)).Err()
+
 	return result, nil
 }
 
 func (s *PostServiceImpl) Find(ctx context.Context, postID int) (*response.CreatePostResponse, error) {
+	// Step 0: Check if post yang mau kita cari ada di cache
+	cacheKey := fmt.Sprintf("post:%d:v%d", postID, cacheVersion)
+	cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var postResp response.CreatePostResponse
+		if err := json.Unmarshal([]byte(cached), &postResp); err == nil {
+			return &postResp, nil
+		}
+	}
+
+	// Start step 1 kalau step 0 gagal: validate if post exists
 	post, err := s.PostRepository.Find(ctx, s.DB, postID)
 	if err != nil {
 		if err == sql.ErrNoRows || post == nil {
@@ -106,7 +127,7 @@ func (s *PostServiceImpl) Find(ctx context.Context, postID int) (*response.Creat
 		return nil, err
 	}
 
-	// Load user details
+	// Step 2: Load user details
 	user, err := s.UserRepository.FindByID(ctx, s.DB, post.UserID)
 	if err != nil {
 		if err == sql.ErrNoRows || user == nil {
@@ -128,15 +149,35 @@ func (s *PostServiceImpl) Find(ctx context.Context, postID int) (*response.Creat
 		Mood:      post.Mood,
 		CreatedAt:  post.CreatedAt,
 	}
+
+	// Cache the response
+	jsonVal, err := json.Marshal(postResponse)
+	if err == nil {
+		_ = s.RedisClient.Set(ctx, cacheKey, jsonVal, 10*time.Minute).Err()
+	}
+
+	// Return response
 	return &postResponse, nil
 }
 
 func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostResponse, error) {
+	// step 0: Check cache-nya dulu (apakah data yang diretrieve ada perubahan atau engga)
+	cacheKey := fmt.Sprintf("post:all:v%d", cacheVersion)
+	cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var postResp []*response.CreatePostResponse
+		if err := json.Unmarshal([]byte(cached), &postResp); err == nil {
+			return postResp, nil
+		}
+	}
+
+	// step 1: find all posts (fetch dari database jika tidak ada di cache)
 	posts, err := s.PostRepository.FindAll(ctx, s.DB)
 	if err != nil {
 		if err == sql.ErrNoRows || posts == nil {
 			return nil, fmt.Errorf("no posts found")
 		}
+		return nil, err
 	}
 
 	var postResponses []*response.CreatePostResponse
@@ -168,6 +209,14 @@ func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostRe
 	if len(postResponses) == 0 {
 		return nil, fmt.Errorf("no posts found")
 	}
+
+	// Simpan response ke dalam cache
+	jsonVal, err := json.Marshal(postResponses) // Convert data ke JSON
+	if err == nil {
+		_ = s.RedisClient.Set(ctx, cacheKey, jsonVal, 10*time.Minute).Err() // Simpan ke Redis
+	}
+
+	// Return response
 	return postResponses, nil
 }
 
@@ -255,48 +304,86 @@ func (s *PostServiceImpl) Update(ctx context.Context, postID int, req request.Cr
 		return nil, err
 	}
 
-	// Update post
+	// Kalau udah aman, baru kita update post-nya
 	post.Content = req.Content
 	post.Mood = moodResp.Prediction
-	post.CreatedAt = time.Now()
 
-	updatedPost, err := s.PostRepository.Update(ctx, s.DB, postID, post)
+	// Start transaction
+	tx, err := s.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert to response
-	postResponse := &response.CreatePostResponse{
-		PostID:    updatedPost.PostID,
-		UserID:    updatedPost.UserID,
-		User: response.UserSummary{
-			UserID: user.ID,
-			Username: user.Username,
-			FullName: user.Fullname,
-		},
-		Content:   updatedPost.Content,
-		Mood:      updatedPost.Mood,
-		CreatedAt:  updatedPost.CreatedAt,
+	// Rollback kalau terjadi error
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Update post di DB
+	updatedPost, err := s.PostRepository.Update(ctx, tx, postID, post)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	// Invalidate the cache for the updated post
+	s.RedisClient.Del(ctx, fmt.Sprintf("post:%d:v%d", postID, cacheVersion))
+	s.RedisClient.Del(ctx, fmt.Sprintf("post:all:v%d", cacheVersion))
+
+	// Cari post yang udah diupdate untuk direturn sebagai response
+	postResponse, err := s.Find(ctx, updatedPost.PostID)
+	if err != nil {
+		return nil, err
 	}
 
 	return postResponse, nil
 }
 
 func (s *PostServiceImpl) Delete(ctx context.Context, postID int) (string, error) {
-	// Validate if post exists
-	post, err := s.PostRepository.Find(ctx, s.DB, postID)
+	// Start transaction
+	tx, err := s.DB.Begin()
 	if err != nil {
-		if err == sql.ErrNoRows || post == nil {
+		return "", err
+	}
+
+	// Rollback kalau terjadi error
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Check if post exists
+	_, err = s.PostRepository.Find(ctx, s.DB, postID)
+	if err != nil {
+		if err == sql.ErrNoRows {
 			return "", fmt.Errorf("post with ID %d not found", postID)
 		}
 		return "", err
 	}
 
-	// Delete post
-	message, err := s.PostRepository.Delete(ctx, s.DB, postID)
+	// Delete from DB
+	message, err := s.PostRepository.Delete(ctx, tx, postID)
 	if err != nil {
 		return "", err
 	}
+
+	// Commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return "", err
+	}
+
+	// Invalidate the cache for the deleted post
+	s.RedisClient.Del(ctx, fmt.Sprintf("post:%d:v%d", postID, cacheVersion))
+	s.RedisClient.Del(ctx, fmt.Sprintf("post:all:v%d", cacheVersion))
 
 	return message, nil
 }

@@ -12,8 +12,8 @@ type PostRepository interface {
 	Find(ctx context.Context, db *sql.DB, postID int) (*entity.Post, error)
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error)
 	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
-	Update(ctx context.Context, db *sql.DB, postID int, post *entity.Post) (*entity.Post, error)
-	Delete(ctx context.Context, db *sql.DB, postID int) (string, error)
+	Update(ctx context.Context, tx *sql.Tx, postID int, post *entity.Post) (*entity.Post, error)
+	Delete(ctx context.Context, tx *sql.Tx, postID int) (string, error)
 }
 
 type PostRepositoryImpl struct {
@@ -97,12 +97,12 @@ func (r *PostRepositoryImpl) FindByUserID(ctx context.Context, db *sql.DB, userI
 	return posts, nil
 }
 
-func (r *PostRepositoryImpl) Update(ctx context.Context, db *sql.DB, postID int, post *entity.Post) (*entity.Post, error) {
+func (r *PostRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, postID int, post *entity.Post) (*entity.Post, error) {
 	// set query-nya
 	query := `UPDATE posts SET content = $1, mood = $2 WHERE postid = $3 RETURNING postid, userid, content, mood, createdat`
 
 	// jalankan query-nya
-	row := db.QueryRowContext(ctx, query, post.Content, post.Mood, postID)
+	row := tx.QueryRowContext(ctx, query, post.Content, post.Mood, postID)
 
 	// buat variable untuk menampung hasil query
 	var updatedPost entity.Post
@@ -119,12 +119,12 @@ func (r *PostRepositoryImpl) Update(ctx context.Context, db *sql.DB, postID int,
 	return &updatedPost, nil
 }
 
-func (r *PostRepositoryImpl) Delete(ctx context.Context, db *sql.DB, postID int) (string, error) {
+func (r *PostRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, postID int) (string, error) {
 	// step 1: set query-nya
 	query := `DELETE FROM posts WHERE postid = $1 RETURNING postid`
 
 	// step 2: jalankan query-nya
-	row := db.QueryRowContext(ctx, query, postID)
+	row := tx.QueryRowContext(ctx, query, postID)
 
 	// step 3: buat variable untuk menampung hasil query
 	var deletedPostID int

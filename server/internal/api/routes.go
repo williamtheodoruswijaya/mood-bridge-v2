@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
 )
 
 // step 1: define sebuah Handler sebagai struct yang akan digunakan untuk mengumpulkan semua handler yang ada dalam rest api kita.
@@ -18,11 +19,11 @@ type Handlers struct {
 }
 
 // step 2: buat method untuk setiap route yang ada dalam api kita. misal kita mau bikin route untuk create user, kita bisa bikin method CreateUser
-func SetupRoutes(db *sql.DB) *gin.Engine {
-	return initRoutes(initHandler(db))
+func SetupRoutes(db *sql.DB, redisClient *redis.Client) *gin.Engine {
+	return initRoutes(initHandler(db, redisClient))
 }
 
-func initHandler(db *sql.DB) Handlers {
+func initHandler(db *sql.DB, redisClient *redis.Client) Handlers {
 	// Inisialisasi validator juga
 	validator := validator.New()
 
@@ -32,7 +33,7 @@ func initHandler(db *sql.DB) Handlers {
 	userHandler := handler.NewUserHandler(userService, *validator)
 
 	postRepository := repository.NewPostRepository()
-	postService := service.NewPostService(db, postRepository, userRepository, service.NewMoodPredictionService())
+	postService := service.NewPostService(db, postRepository, userRepository, service.NewMoodPredictionService(), redisClient)
 	postHandler := handler.NewPostHandler(postService, *validator)
 
 	return Handlers{
