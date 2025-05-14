@@ -72,6 +72,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		post.GET("/all", h.PostHandler.FindAll)
 		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 		post.PUT("/update/:id", h.PostHandler.Update)
+		post.DELETE("/delete/:id", h.PostHandler.Delete)
 	}
 
 

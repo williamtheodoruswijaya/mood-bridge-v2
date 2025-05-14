@@ -18,6 +18,7 @@ type PostHandler interface {
 	FindAll (c *gin.Context)
 	FindByUserID (c *gin.Context)
 	Update (c *gin.Context)
+	Delete (c *gin.Context)
 }
 
 type PostHandlerImpl struct {
@@ -232,6 +233,43 @@ func (h *PostHandlerImpl) Update(c *gin.Context) {
 			"code":    http.StatusOK,
 			"message": "Post updated successfully",
 			"data":    response,
+		})
+		return
+	}
+}
+
+func (h *PostHandlerImpl) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Post ID is required",
+		})
+		return
+	}
+	postID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid Post ID format",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	response, err := h.PostService.Delete(ctx, postID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": err.Error(),
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": response,
 		})
 		return
 	}

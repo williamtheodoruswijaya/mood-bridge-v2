@@ -18,6 +18,7 @@ type PostService interface {
 	FindAll(ctx context.Context) ([]*response.CreatePostResponse, error)
 	FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
 	Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error)
+	Delete(ctx context.Context, postID int) (string, error)
 }
 
 type PostServiceImpl struct {
@@ -279,4 +280,23 @@ func (s *PostServiceImpl) Update(ctx context.Context, postID int, req request.Cr
 	}
 
 	return postResponse, nil
+}
+
+func (s *PostServiceImpl) Delete(ctx context.Context, postID int) (string, error) {
+	// Validate if post exists
+	post, err := s.PostRepository.Find(ctx, s.DB, postID)
+	if err != nil {
+		if err == sql.ErrNoRows || post == nil {
+			return "", fmt.Errorf("post with ID %d not found", postID)
+		}
+		return "", err
+	}
+
+	// Delete post
+	message, err := s.PostRepository.Delete(ctx, s.DB, postID)
+	if err != nil {
+		return "", err
+	}
+
+	return message, nil
 }

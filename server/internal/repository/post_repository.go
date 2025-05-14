@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"mood-bridge-v2/server/internal/entity"
+	"strconv"
 )
 
 type PostRepository interface {
@@ -12,6 +13,7 @@ type PostRepository interface {
 	FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error)
 	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
 	Update(ctx context.Context, db *sql.DB, postID int, post *entity.Post) (*entity.Post, error)
+	Delete(ctx context.Context, db *sql.DB, postID int) (string, error)
 }
 
 type PostRepositoryImpl struct {
@@ -115,4 +117,27 @@ func (r *PostRepositoryImpl) Update(ctx context.Context, db *sql.DB, postID int,
 	}
 
 	return &updatedPost, nil
+}
+
+func (r *PostRepositoryImpl) Delete(ctx context.Context, db *sql.DB, postID int) (string, error) {
+	// step 1: set query-nya
+	query := `DELETE FROM posts WHERE postid = $1 RETURNING postid`
+
+	// step 2: jalankan query-nya
+	row := db.QueryRowContext(ctx, query, postID)
+
+	// step 3: buat variable untuk menampung hasil query
+	var deletedPostID int
+
+	// step 4: scan hasil query ke variable
+	err := row.Scan(&deletedPostID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil // Post not found
+		}
+		return "", err // Other error
+	}
+
+	// step 5: return hasilnya
+	return "Post with ID " + strconv.Itoa(deletedPostID) + " deleted successfully", nil
 }
