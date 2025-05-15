@@ -105,6 +105,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		friend.POST("/accept", h.FriendHandler.AcceptRequest)
 		friend.GET("/all/:id", h.FriendHandler.GetFriends)
 		friend.DELETE("/delete/:id", h.FriendHandler.Delete)
+		friend.GET("/requests/:id", h.FriendHandler.GetFriendRequests)
 	}
 
 	return router

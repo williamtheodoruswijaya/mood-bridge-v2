@@ -20,6 +20,7 @@ type FriendService interface {
 	AcceptRequest(ctx context.Context, req request.FriendRequest) (*response.FriendResponse, error)
 	GetFriends(ctx context.Context, userID int) ([]*response.FriendResponse, error)
 	Delete(ctx context.Context, friendID int) (string, error)
+	GetFriendRequests(ctx context.Context, userID int) ([]*response.FriendResponse, error)
 }
 
 type FriendServiceImpl struct {
@@ -111,16 +112,13 @@ func (s *FriendServiceImpl) AddFriend(ctx context.Context, req request.FriendReq
 		},
 	}
 
-	// step 9: set cache
-	friendCacheKey := fmt.Sprintf("friend:%d:v%d", req.FriendUserID, cacheVersion)
-	jsonData, err := json.Marshal(resp)
-	if err != nil {
-		return nil, err
-	}
-	
-	if err := s.RedisClient.Set(ctx, friendCacheKey, jsonData, time.Minute*10).Err(); err != nil {
-		return nil, err
-	}
+	// step 9: cache logic
+	// 9.1: hapus cache lama dari daftar friend request punya si target karena ada request add friend yang baru
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friendrequest:%d:v%d", req.FriendUserID, cacheVersion)).Err()
+	// opsional: hapus cache daftar teman dari user dan target
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friend:%d:v%d", req.UserID, cacheVersion)).Err()
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friend:%d:v%d", req.FriendUserID, cacheVersion)).Err()
+	// NOTES: kita gaush simpan request ini ke cache karena akan menimpa semua friend request yang ada di cache
 
 	// step 10: return response
 	return resp, nil
@@ -149,7 +147,7 @@ func (s *FriendServiceImpl) AcceptRequest(ctx context.Context, req request.Frien
 	}
 
 	// step 4: find user (siapa tau usernya gaada tapi malah friend request kan serem)
-	user, err := s.userRepository.FindByID(ctx, s.DB, req.UserID)
+	user, err := s.userRepository.FindByID(ctx, s.DB, req.FriendUserID)
 	if err != nil {
 		if err == sql.ErrNoRows || user == nil {
 			return nil, fmt.Errorf("user with id %d not found", req.UserID)
@@ -200,15 +198,12 @@ func (s *FriendServiceImpl) AcceptRequest(ctx context.Context, req request.Frien
 		},
 	}
 
-	// step 9: set cache
-	friendCacheKey := fmt.Sprintf("friend:%d:v%d", req.FriendUserID, cacheVersion)
-	jsonData, err := json.Marshal(resp)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.RedisClient.Set(ctx, friendCacheKey, jsonData, time.Minute*10).Err(); err != nil {
-		return nil, err
-	}
+	// step 9: cache invalidation (ketika kita accept sebuah request, maka perubahan dalam database ada pada friend list dan friend request)
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friend:%d:v%d", req.UserID, cacheVersion)).Err()
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friend:%d:v%d", req.FriendUserID, cacheVersion)).Err()
+
+	// Hapus juga cache friend request punya si pengirim (karena kalau dia accept, berarti friend request-nya udah gaada)
+	_ = s.RedisClient.Del(ctx, fmt.Sprintf("friendrequest:%d:v%d", req.UserID, cacheVersion)).Err()
 
 	// step 10: return response
 	return resp, nil
@@ -252,7 +247,7 @@ func (s *FriendServiceImpl) GetFriends(ctx context.Context, userID int) ([]*resp
 
 	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
 	if len(friendResponses) == 0 {
-		return nil, fmt.Errorf("no friends found")
+		return []*response.FriendResponse{}, fmt.Errorf("no friends found")
 	}
 
 	// step 6: ubah ke dalam json untuk disimpan ke cache
@@ -290,7 +285,8 @@ func (s *FriendServiceImpl) Delete(ctx context.Context, friendID int) (string, e
 	}
 
 	// step 4: commit transaction
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return "", err
 	}
 
@@ -300,4 +296,56 @@ func (s *FriendServiceImpl) Delete(ctx context.Context, friendID int) (string, e
 
 	// step 6: return response
 	return message, nil
+}
+
+func (s *FriendServiceImpl) GetFriendRequests(ctx context.Context, userID int) ([]*response.FriendResponse, error) {
+	// step 1: set cache key
+	friendCacheKey := fmt.Sprintf("friendrequest:%d:v%d", userID, cacheVersion)
+
+	// step 2: get cache based on cache key
+	cachedFriendRequests, err := s.RedisClient.Get(ctx, friendCacheKey).Result()
+	if err == nil {
+		var friendRequests []*response.FriendResponse
+		if err := json.Unmarshal([]byte(cachedFriendRequests), &friendRequests); err == nil {
+			return friendRequests, nil
+		}
+	}
+
+	// step 3: get friend requests from repository
+	friendRequests, err := s.friendRepository.GetFriendRequests(ctx, s.DB, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 4: convert to response
+	var friendRequestResponses []*response.FriendResponse
+	for _, friendRequest := range *friendRequests {
+		friendRequestResponses = append(friendRequestResponses, &response.FriendResponse{
+			FriendID:    friendRequest.FriendID,
+			UserID:      friendRequest.UserID,
+			FriendUserID: friendRequest.FriendUserID,
+			FriendStatus: friendRequest.FriendStatus,
+			CreatedAt:    friendRequest.CreatedAt,
+			User: response.UserSummary{
+				UserID:      friendRequest.User.ID,
+				Username:    friendRequest.User.Username,
+				FullName:    friendRequest.User.Fullname,
+			},
+		})
+	}
+
+	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
+	if len(friendRequestResponses) == 0 {
+		return []*response.FriendResponse{}, fmt.Errorf("no friend requests found")
+	}
+
+	// step 6: ubah ke dalam json untuk disimpan ke cache
+	jsonData, err := json.Marshal(friendRequestResponses)
+	if err == nil {
+		// step 7: kalau gaada error ketika perubahan ke json ini, kita simpan ke cache
+		_ = s.RedisClient.Set(ctx, friendCacheKey, jsonData, 10*time.Minute).Err()
+	}
+
+	// step 8: return response
+	return friendRequestResponses, nil
 }

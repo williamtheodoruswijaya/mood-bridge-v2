@@ -17,6 +17,7 @@ type FriendHandler interface {
 	AcceptRequest(c *gin.Context)
 	GetFriends(c *gin.Context)
 	Delete(c *gin.Context)
+	GetFriendRequests(c *gin.Context)
 }
 
 type FriendHandlerImpl struct {
@@ -167,6 +168,51 @@ func (h *FriendHandlerImpl) Delete(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": http.StatusOK,
 			"message": message,
+		})
+	}
+}
+
+func (h *FriendHandlerImpl) GetFriendRequests(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":   http.StatusBadRequest,
+			"message": "User ID is required",
+		})
+		return
+	}
+
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":   http.StatusBadRequest,
+			"message": "Invalid User ID format",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	friendRequests, err := h.FriendService.GetFriendRequests(ctx, userIDInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":   http.StatusInternalServerError,
+			"message": err.Error(),
+		})
+		return
+	}
+	if len(friendRequests) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":   http.StatusNotFound,
+			"message": "No friend requests found",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code": http.StatusOK,
+			"message": "Friend requests retrieved successfully",
+			"data": friendRequests,
 		})
 	}
 }

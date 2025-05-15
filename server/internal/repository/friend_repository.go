@@ -14,6 +14,7 @@ type FriendRepository interface {
 	Delete(ctx context.Context, tx *sql.Tx, friendID int) (string, error)
 	IsFriendExist(ctx context.Context, db *sql.DB, userID int, friendUserID int) (bool, error)
 	IsFriendAlreadyAccepted(ctx context.Context, db *sql.DB, userID int, friendUserID int) (bool, error)
+	GetFriendRequests(ctx context.Context, db *sql.DB, userID int) (*[]entity.Friend, error)
 }
 
 type FriendRepositoryImpl struct {
@@ -172,4 +173,48 @@ func (r *FriendRepositoryImpl) IsFriendAlreadyAccepted(ctx context.Context, db *
 		return false, err // ada error lain
 	}
 	return true, nil
+}
+
+func (r *FriendRepositoryImpl) GetFriendRequests(ctx context.Context, db *sql.DB, userID int) (*[]entity.Friend, error) {
+	query := `
+	SELECT
+		f.friendid,
+		f.userid,
+		u.username,
+		u.fullname,
+		u.email,
+		f.createdat
+	FROM 
+		friends f
+	JOIN
+		users u ON f.userid = u.userid
+	WHERE
+		f.frienduserid = $1
+		AND f.friendstatus = false
+	ORDER BY f.createdat DESC
+	`
+
+	rows, err := db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var friendRequests []entity.Friend
+	for rows.Next() {
+		var friend entity.Friend
+		var user entity.User
+		if err := rows.Scan(&friend.FriendID, &friend.UserID, &user.Username, &user.Fullname, &user.Email, &friend.CreatedAt); err != nil {
+			return nil, err
+		}
+		friend.User = &user
+		friendRequests = append(friendRequests, friend)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &friendRequests, nil
 }
