@@ -115,8 +115,18 @@ func (s *CommentServiceImpl) Create(ctx context.Context, req request.CreateComme
 	}
 
 	// step 10: Invalidate cache pada comment dan post (post tetap harus di-invalidate karena ada perubahan pada komentar)
-	_ = s.RedisClient.Del(ctx, fmt.Sprintf("comment:%d:v%d", commentResult.CommentID, cacheVersion)).Err()
-	_ = s.RedisClient.Del(ctx, fmt.Sprintf("post:%d:v%d", commentResult.PostID, cacheVersion)).Err()
+	postCacheKey := fmt.Sprintf("comment:post:%d:v%d", commentResult.PostID, cacheVersion)
+	userCacheKey := fmt.Sprintf("comment:user:%d:v%d", commentResult.UserID, cacheVersion)
+	postDetailCacheKey := fmt.Sprintf("post:%d:v%d", commentResult.PostID, cacheVersion)
+	if err := s.RedisClient.Del(ctx, postCacheKey).Err(); err != nil {
+    	fmt.Printf("Failed to delete post comment cache: %v\n", err)
+	}
+	if err := s.RedisClient.Del(ctx, userCacheKey).Err(); err != nil {
+    	fmt.Printf("Failed to delete user comment cache: %v\n", err)
+	}
+	if err := s.RedisClient.Del(ctx, postDetailCacheKey).Err(); err != nil {
+    	fmt.Printf("Failed to delete post detail cache: %v\n", err)
+	}
 
 	// step 11: Kembalikan commentResp-nya
 	return commentResp, nil
@@ -167,10 +177,10 @@ func (s *CommentServiceImpl) GetAllByPostID(ctx context.Context, postID int) ([]
 
 	users, err := s.userRepository.FindByIDs(ctx, s.DB, userIDs)
 	if err != nil {
-		if err == sql.ErrNoRows || users == nil {
-			return nil, fmt.Errorf("users for post with ID %d not found", postID)
-		}
-		return nil, err
+		return nil, fmt.Errorf("error fetching users: %v", err)
+	}
+	if len(users) == 0 {
+		return nil, fmt.Errorf("no users found for the given comment user IDs")
 	}
 
 	userMap := map[int]*entity.User{}
@@ -181,9 +191,10 @@ func (s *CommentServiceImpl) GetAllByPostID(ctx context.Context, postID int) ([]
 	// step 7: Convert ke dalam response
 	var commentResps []*response.CreateCommentResponse
 	for _, comment := range comments {
-		user := userMap[comment.UserID]
-		if user == nil {
-			return nil, fmt.Errorf("user with ID %d not found", comment.UserID)
+		user, ok := userMap[comment.UserID]
+		if !ok {
+			fmt.Printf("user with ID %d not found for comment ID %d\n", comment.UserID, comment.CommentID)
+			continue
 		}
 
 		commentResp := &response.CreateCommentResponse{
@@ -210,7 +221,7 @@ func (s *CommentServiceImpl) GetAllByPostID(ctx context.Context, postID int) ([]
 	jsonData, err := json.Marshal(commentResps)
 	if err == nil {
 		// step 8: Kalau gaada error, simpan ke dalam cache
-		err = s.RedisClient.Set(ctx, cacheKey, jsonData, 10*time.Minute).Err()
+		_ = s.RedisClient.Set(ctx, cacheKey, jsonData, 10*time.Minute).Err()
 	}
 
 	// step 9: Kembalikan commentResps-nya
@@ -251,9 +262,14 @@ func (s *CommentServiceImpl) Delete(ctx context.Context, commentID int) (string,
 		return "", err
 	}
 
-	// step 6: invalidate cache pada comment dan post (post tetap harus di-invalidate karena ada perubahan pada komentar)
-	s.RedisClient.Del(ctx, fmt.Sprintf("comment:%d:v%d", comment.CommentID, cacheVersion)).Err()
-	s.RedisClient.Del(ctx, fmt.Sprintf("post:%d:v%d", comment.PostID, cacheVersion)).Err()
+	// step 6: invalidate cache pada comment list post dan user, serta cache post
+	postCacheKey := fmt.Sprintf("comment:post:%d:v%d", comment.PostID, cacheVersion)
+	userCacheKey := fmt.Sprintf("comment:user:%d:v%d", comment.UserID, cacheVersion)
+	postDetailCacheKey := fmt.Sprintf("post:%d:v%d", comment.PostID, cacheVersion)
+
+	_ = s.RedisClient.Del(ctx, postCacheKey).Err()
+	_ = s.RedisClient.Del(ctx, userCacheKey).Err()
+	_ = s.RedisClient.Del(ctx, postDetailCacheKey).Err()
 
 	// step 7: kembalikan message-nya
 	return message, nil
@@ -279,6 +295,7 @@ func (s *CommentServiceImpl) GetByID(ctx context.Context, commentID int) (*respo
 		if err == sql.ErrNoRows || comment == nil {
 			return nil, fmt.Errorf("comment with ID %d not found", commentID)
 		}
+		return nil, err
 	}
 
 	// Step 5: Load User dan Post-nya
@@ -287,12 +304,14 @@ func (s *CommentServiceImpl) GetByID(ctx context.Context, commentID int) (*respo
 		if err == sql.ErrNoRows || user == nil {
 			return nil, fmt.Errorf("user with ID %d not found", comment.UserID)
 		}
+		return nil, err
 	}
 	post, err := s.postRepository.Find(ctx, s.DB, comment.PostID)
 	if err != nil {
 		if err == sql.ErrNoRows || post == nil {
 			return nil, fmt.Errorf("post with ID %d not found", comment.PostID)
 		}
+		return nil, err
 	}
 
 	// Step 6: Convert ke response

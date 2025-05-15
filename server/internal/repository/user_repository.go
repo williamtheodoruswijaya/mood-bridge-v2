@@ -168,7 +168,7 @@ func (r *UserRepositoryImpl) FindByIDs(ctx context.Context, db *sql.DB, ids []in
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids))
 	for i, id := range ids {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
 		args[i] = id
 	}
 
