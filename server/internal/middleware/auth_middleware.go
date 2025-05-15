@@ -93,6 +93,9 @@ func ValidateToken(c *gin.Context, token string) error {
 	// Set user data to context
 	userLogin := c.Request.WithContext(context.WithValue(c.Request.Context(), "user_login", claims.User))
 	c.Request = userLogin
+	
+	// Set claims to context
+	c.Set("user_login", claims.User)
 	c.Set("token", token)
 
 	return nil

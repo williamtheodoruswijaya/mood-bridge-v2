@@ -51,12 +51,14 @@ func (h *CommentHandlerImpl) Create(c *gin.Context) {
 			"code":    http.StatusInternalServerError,
 			"message": err.Error(),
 		})
+		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
 			"message": "Comment Created Successfully",
 			"data":    response,
 		})
+		return
 	}
 }
 
@@ -89,12 +91,14 @@ func (h *CommentHandlerImpl) GetAllByPostID(c *gin.Context) {
 			"code":    http.StatusInternalServerError,
 			"message": err.Error(),
 		})
+		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
 			"message": "Comments Retrieved Successfully",
 			"data":    response,
 		})
+		return
 	}
 }
 
@@ -105,6 +109,7 @@ func (h *CommentHandlerImpl) Delete(c *gin.Context) {
 			"code":    http.StatusBadRequest,
 			"message": "Comment ID is required",
 		})
+		return
 	}
 
 	commentIDInt, err := strconv.Atoi(commentID)

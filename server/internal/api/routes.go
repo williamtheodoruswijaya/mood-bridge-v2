@@ -17,6 +17,7 @@ type Handlers struct {
 	UserHandler    handler.UserHandler
 	PostHandler    handler.PostHandler
 	CommentHandler handler.CommentHandler
+	FriendHandler handler.FriendHandler
 }
 
 // step 2: buat method untuk setiap route yang ada dalam api kita. misal kita mau bikin route untuk create user, kita bisa bikin method CreateUser
@@ -41,10 +42,15 @@ func initHandler(db *sql.DB, redisClient *redis.Client) Handlers {
 	commentService := service.NewCommentService(commentRepository, userRepository, postRepository, db, redisClient)
 	commentHandler := handler.NewCommentHandler(commentService, *validator)
 
+	friendRepository := repository.NewFriendRepository()
+	friendService := service.NewFriendService(friendRepository, userRepository, db, redisClient)
+	friendHandler := handler.NewFriendHandler(friendService, *validator)
+
 	return Handlers{
 		UserHandler:    userHandler,
 		PostHandler:    postHandler,
 		CommentHandler: commentHandler,
+		FriendHandler: friendHandler,
 	}
 }
 
@@ -90,6 +96,15 @@ func initRoutes(h Handlers) *gin.Engine {
 		comment.GET("/by-postid/:id", h.CommentHandler.GetAllByPostID)
 		comment.GET("/by-id/:id", h.CommentHandler.GetByID)
 		comment.DELETE("/delete/:id", h.CommentHandler.Delete)
+	}
+
+	friend := api.Group("/friend")
+	{
+		friend.Use(middleware.Authenticate())
+		friend.POST("/add", h.FriendHandler.AddFriend)
+		friend.POST("/accept", h.FriendHandler.AcceptRequest)
+		friend.GET("/all/:id", h.FriendHandler.GetFriends)
+		friend.DELETE("/delete/:id", h.FriendHandler.Delete)
 	}
 
 	return router
