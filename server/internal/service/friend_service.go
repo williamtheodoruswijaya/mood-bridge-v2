@@ -88,6 +88,9 @@ func (s *FriendServiceImpl) AddFriend(ctx context.Context, req request.FriendReq
 	if err != nil {
 		return nil, err
 	}
+	if newFriend == nil {
+		return nil, fmt.Errorf("failed to add friend")
+	}
 
 	// step 7: commit transaction
 	if err := tx.Commit(); err != nil {
@@ -132,7 +135,10 @@ func (s *FriendServiceImpl) AcceptRequest(ctx context.Context, req request.Frien
 
 	// step 2: rollback transaction
 	defer func() {
-		if err != nil {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
 			tx.Rollback()
 		}
 	}()

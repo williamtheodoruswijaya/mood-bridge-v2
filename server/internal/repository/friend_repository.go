@@ -45,7 +45,7 @@ func (r *FriendRepositoryImpl) AcceptRequest(ctx context.Context, tx *sql.Tx, fr
 	query := `
 		UPDATE friends
 		SET friendstatus = TRUE
-		WHERE userid = $1 AND frienduserid = $2 AND friendstatus = FALSE
+		WHERE userid = $2 AND frienduserid = $1 AND friendstatus = FALSE
 		RETURNING friendid, userid, frienduserid, friendstatus, createdat
 	`
 

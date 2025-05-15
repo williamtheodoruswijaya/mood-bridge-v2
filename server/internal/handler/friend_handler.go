@@ -2,9 +2,7 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"mood-bridge-v2/server/internal/model/request"
-	"mood-bridge-v2/server/internal/model/response"
 	"mood-bridge-v2/server/internal/service"
 	"net/http"
 	"strconv"
@@ -71,26 +69,6 @@ func (h *FriendHandlerImpl) AcceptRequest(c *gin.Context) {
 		})
 		return
 	}
-
-	userLoginAny, exists := c.Get("user_login")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"code":   http.StatusUnauthorized,
-			"message": "User not logged in",
-		})
-		return
-	}
-
-	userLogin, ok :=userLoginAny.(*response.UserSummary)
-	fmt.Print(userLogin) // buat debug
-	if !ok || userLogin == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"code":   http.StatusUnauthorized,
-			"message": "You cannot accept a friend request that are belong to other users",
-		})
-		return
-	}
-	req.UserID = userLogin.UserID
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
