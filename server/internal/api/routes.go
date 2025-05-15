@@ -14,8 +14,9 @@ import (
 
 // step 1: define sebuah Handler sebagai struct yang akan digunakan untuk mengumpulkan semua handler yang ada dalam rest api kita.
 type Handlers struct {
-	UserHandler handler.UserHandler
-	PostHandler handler.PostHandler
+	UserHandler    handler.UserHandler
+	PostHandler    handler.PostHandler
+	CommentHandler handler.CommentHandler
 }
 
 // step 2: buat method untuk setiap route yang ada dalam api kita. misal kita mau bikin route untuk create user, kita bisa bikin method CreateUser
@@ -36,9 +37,14 @@ func initHandler(db *sql.DB, redisClient *redis.Client) Handlers {
 	postService := service.NewPostService(db, postRepository, userRepository, service.NewMoodPredictionService(), redisClient)
 	postHandler := handler.NewPostHandler(postService, *validator)
 
+	commentRepository := repository.NewCommentRepository()
+	commentService := service.NewCommentService(commentRepository, userRepository, postRepository, db, redisClient)
+	commentHandler := handler.NewCommentHandler(commentService, *validator)
+
 	return Handlers{
-		UserHandler: userHandler,
-		PostHandler: postHandler,
+		UserHandler:    userHandler,
+		PostHandler:    postHandler,
+		CommentHandler: commentHandler,
 	}
 }
 
@@ -57,7 +63,7 @@ func initRoutes(h Handlers) *gin.Engine {
 	{
 		user.POST("/register", h.UserHandler.Create)
 		user.POST("/login", h.UserHandler.Login)
-		
+
 		user.Use(middleware.Authenticate())
 		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
@@ -77,6 +83,14 @@ func initRoutes(h Handlers) *gin.Engine {
 		post.DELETE("/delete/:id", h.PostHandler.Delete)
 	}
 
+	comment := api.Group("/comment")
+	{
+		comment.Use(middleware.Authenticate())
+		comment.POST("/create", h.CommentHandler.Create)
+		comment.GET("/by-postid/:id", h.CommentHandler.GetAllByPostID)
+		comment.GET("/by-id/:id", h.CommentHandler.GetByID)
+		comment.DELETE("/delete/:id", h.CommentHandler.Delete)
+	}
 
 	return router
 }
