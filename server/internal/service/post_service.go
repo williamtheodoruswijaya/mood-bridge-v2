@@ -22,6 +22,7 @@ type PostService interface {
 	FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
 	Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 	Delete(ctx context.Context, postID int) (string, error)
+	// GetPostBySearch(ctx context.Context, query string) ([]*response.CreatePostResponse, error)
 }
 
 type PostServiceImpl struct {
@@ -387,3 +388,7 @@ func (s *PostServiceImpl) Delete(ctx context.Context, postID int) (string, error
 
 	return message, nil
 }
+
+// func (s *PostServiceImpl) GetPostBySearch(ctx context.Context, query string) ([]*response.CreatePostResponse, error) {
+// 	// nanti diisinya besok.
+// }
