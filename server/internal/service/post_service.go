@@ -181,14 +181,39 @@ func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostRe
 		return nil, err
 	}
 
+	// step 2: kumpulkan semua user id buat di proses sebagai batch queries (menghindari N+1 query)
+	userIDMap := make(map[int]bool)
+	for _, post := range posts {
+		userIDMap[post.UserID] = true
+	}
+
+	// step 3: ambil semua id user yang sudah kita kumpulkan (ambil yang True aja)
+	var userIDs []int
+	for id := range userIDMap {
+		userIDs = append(userIDs, id)
+	}
+
+	// step 4: query ke database untuk ambil semua user yang ada di userIDMap secara sekaligus
+	users, err := s.UserRepository.FindByIDs(ctx, s.DB, userIDs)
+	if err != nil {
+		if err == sql.ErrNoRows || users == nil {
+			return nil, fmt.Errorf("no users found")
+		}
+		return nil, err
+	}
+
+	// step 5: buat map untuk memudahkan pengambilan user berdasarkan ID
+	userMap := make(map[int]*entity.User)
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
 	var postResponses []*response.CreatePostResponse
 	for _, post := range posts {
-		user, err := s.UserRepository.FindByID(ctx, s.DB, post.UserID)
-		if err != nil {
-			if err == sql.ErrNoRows || user == nil {
-				return nil, fmt.Errorf("user with ID %d not found", post.UserID)
-			}
-			return nil, err
+		user, ok := userMap[post.UserID]
+		if !ok {
+			fmt.Printf("user with ID %d not found for post ID %d\n", post.UserID, post.PostID)
+			continue // Skip this post if user not found
 		}
 
 		postResponse := &response.CreatePostResponse{
