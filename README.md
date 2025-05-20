@@ -114,10 +114,9 @@ Dengan meningkatnya tantangan ini, dibutuhkan **solusi berbasis teknologi** yang
 
 ## 👥 Team
 
-Mood Bridge dikembangkan oleh:
-
 * **William Theodorus Wijaya**
-* **Delon Yohan**
+* **Delon Yohan Sunarto**
+* **Arfan Razaqi Rusdi**
 
 ---
 
