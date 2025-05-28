@@ -81,7 +81,7 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Password"
-              className="mb-4 w-full rounded border p-3 focus:outline-none"
+              className="mb-8 w-full rounded border p-3 focus:outline-none"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
