@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import Sidebar from "~/components/sidebar";
+import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Mood Bridge",
@@ -23,9 +24,12 @@ export default function RootLayout({
       <body className={geist.className}>
         <div className="flex h-screen">
           <Sidebar />
-          <main className="flex-1 overflow-auto bg-[#E9FEFF] p-6">
-            {children}
-          </main>
+          <div className="flex flex-1 flex-col">
+            <Navbar />
+            <main className="flex-1 overflow-auto bg-[#E9FEFF] p-6">
+              {children}
+            </main>
+          </div>
         </div>
       </body>
     </html>
