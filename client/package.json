@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.12.0",
+    "axios": "^1.9.0",
+    "js-cookie": "^3.0.5",
     "next": "^15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.7",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

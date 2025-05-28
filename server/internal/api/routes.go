@@ -60,6 +60,8 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	// Terapkan middleware untuk menangani panic
 	router.Use(middleware.HandlePanic())
+	// Terapkan middleware untuk CORS
+	router.Use(middleware.CORSMiddleware())
 
 	// Lakukan grouping
 	api := router.Group("/api")
