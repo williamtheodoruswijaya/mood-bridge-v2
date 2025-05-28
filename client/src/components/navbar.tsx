@@ -64,29 +64,64 @@ export default function Navbar() {
 
   return (
     <nav className="flex w-full items-center justify-between bg-[#28b7be] px-6 py-3 text-white shadow">
-      <div className="ml-auto flex items-center gap-4">
-        {isLoggedIn && (
-          <>
-            <div className="relative w-64">
+      {isLoggedIn ? (
+        <>
+          <div className="flex flex-col items-start">
+            <span className="text-lg font-bold">{user.fullname}</span>
+            <span className="text-sm text-gray-200">({user.username})</span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-4">
+            <div className="relative w-96">
               <CiSearch className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search posts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 className="w-full rounded-md border border-gray-300 bg-white px-10 py-2 text-gray-700 focus:border-blue-500 focus:outline-none"
               />
             </div>
+
             <button onClick={() => router.push("/notifications")}>
               <IoMdNotificationsOutline className="text-2xl text-white hover:text-gray-200" />
             </button>
+
             <button onClick={() => router.push("/profile")}>
               <FaUserCircle className="text-2xl text-white hover:text-gray-200" />
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      ) : (
+        <div className="ml-auto flex items-center gap-4">
+          <div className="relative w-96">
+            <CiSearch className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search posts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full rounded-md border border-gray-300 bg-white px-10 py-2 text-gray-700 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={() => router.push("/login")}
+            className="rounded-md bg-white px-12 py-2 font-bold text-[#28b7be] transition-colors hover:bg-gray-200"
+          >
+            Login
+          </button>
+
+          <button
+            onClick={() => router.push("/register")}
+            className="rounded-md border bg-[#28b7be] px-8 py-2 font-bold text-white transition-colors hover:bg-[#1a9ea0]"
+          >
+            Register
+          </button>
+        </div>
+      )}
     </nav>
   );
 }
