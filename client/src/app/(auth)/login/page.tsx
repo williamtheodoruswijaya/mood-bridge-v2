@@ -1,5 +1,5 @@
 "use client";
-import LoginBackground from "~/assets/login-background.jpeg";
+import LoginBackground from "~/assets/login-background.png";
 import Icon from "~/assets/icon.png";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -43,7 +43,7 @@ export default function LoginPage() {
         <Image
           src={LoginBackground}
           alt="Login Background"
-          className="h-full w-full object-cover"
+          className="h-screen w-full object-cover"
         />
       </div>
       <div className="relative flex w-full items-center justify-center bg-[#28b7be] md:w-3/5">

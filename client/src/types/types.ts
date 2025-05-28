@@ -10,3 +10,9 @@ export interface LoginResponse {
   data: string; // JWT token
   message: string;
 }
+
+export interface RegisterResponse {
+  code: number;
+  data: User;
+  message: string;
+}
