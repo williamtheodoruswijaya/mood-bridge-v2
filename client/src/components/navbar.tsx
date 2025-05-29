@@ -12,6 +12,7 @@ export default function Navbar() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>({
+    userID: 0,
     username: "",
     email: "",
     fullname: "",
@@ -36,6 +37,7 @@ export default function Navbar() {
         const decodedPayload = atob(base64Payload);
         const parsed = JSON.parse(decodedPayload) as {
           user: {
+            userID: number;
             username: string;
             fullname: string;
             email: string;
@@ -46,6 +48,7 @@ export default function Navbar() {
         const user = parsed.user;
         if (user) {
           setUser({
+            userID: Number(user.userID),
             username: user.username,
             email: user.email,
             fullname: user.fullname,
