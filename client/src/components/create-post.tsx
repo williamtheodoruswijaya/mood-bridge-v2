@@ -4,7 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { MoodPredictionResponse, Post, User } from "~/types/types";
+import type { MoodPredictionResponse, PostResponse, User } from "~/types/types";
 
 export default function CreatePost() {
   const router = useRouter();
@@ -107,7 +107,7 @@ export default function CreatePost() {
     setLoading(true);
     try {
       console.log("user", user);
-      const response = await axios.post<Post>(
+      const response = await axios.post<PostResponse>(
         "http://localhost:8080/api/post/create",
         {
           userID: user.userID,
