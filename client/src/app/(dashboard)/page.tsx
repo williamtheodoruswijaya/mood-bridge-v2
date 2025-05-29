@@ -3,6 +3,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import CreatePost from "~/components/create-post";
+import News from "~/components/news";
 import Post from "~/components/post";
 import type { PostInterface, PostResponse, User } from "~/types/types";
 
@@ -130,8 +131,8 @@ export default function HomePage() {
           {renderPosts()}
         </div>
       </section>
-      <aside className="flex w-[250px] flex-col gap-4 border-r p-4 backdrop-blur-md">
-        {/* What's happening Section */}
+      <aside className="flex w-[400px] flex-col gap-4 border-r p-4 backdrop-blur-md">
+        <News />
       </aside>
     </main>
   );
