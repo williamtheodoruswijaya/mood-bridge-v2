@@ -19,6 +19,7 @@ type PostHandler interface {
 	FindByUserID (c *gin.Context)
 	Update (c *gin.Context)
 	Delete (c *gin.Context)
+	GetFriendPosts(c *gin.Context)
 }
 
 type PostHandlerImpl struct {
@@ -270,6 +271,52 @@ func (h *PostHandlerImpl) Delete(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
 			"message": response,
+		})
+		return
+	}
+}
+
+func (h *PostHandlerImpl) GetFriendPosts(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "User ID is required",
+		})
+		return
+	}
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid User ID format",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	response, err := h.PostService.GetFriendPosts(ctx, userIDInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	if len(response) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    http.StatusNotFound,
+			"message": "No friend posts found",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
+			"message": "Success",
+			"data":    response,
 		})
 		return
 	}

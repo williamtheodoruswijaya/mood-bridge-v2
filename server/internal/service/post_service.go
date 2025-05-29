@@ -23,6 +23,7 @@ type PostService interface {
 	Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 	Delete(ctx context.Context, postID int) (string, error)
 	// GetPostBySearch(ctx context.Context, query string) ([]*response.CreatePostResponse, error)
+	GetFriendPosts(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
 }
 
 type PostServiceImpl struct {
@@ -417,3 +418,85 @@ func (s *PostServiceImpl) Delete(ctx context.Context, postID int) (string, error
 // func (s *PostServiceImpl) GetPostBySearch(ctx context.Context, query string) ([]*response.CreatePostResponse, error) {
 // 	// nanti diisinya besok.
 // }
+
+func (s *PostServiceImpl) GetFriendPosts(ctx context.Context, userID int) ([]*response.CreatePostResponse, error) {
+	cacheKey := fmt.Sprintf("friend_posts:%d:v%d", userID, cacheVersion)
+	cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var postResp []*response.CreatePostResponse
+		if err := json.Unmarshal([]byte(cached), &postResp); err == nil {
+			return postResp, nil
+		}
+	}
+
+	// Step 1: Get friend posts from repository
+	friendPosts, err := s.PostRepository.GetFriendPosts(ctx, s.DB, userID)
+	if err != nil {
+		if err == sql.ErrNoRows || friendPosts == nil {
+			return nil, fmt.Errorf("no friend posts found for user with ID %d", userID)
+		}
+		return nil, err
+	}
+
+	// step 2: Collect all user IDs from friend posts
+	userIDMap := make(map[int]bool)
+	for _, post := range friendPosts {
+		userIDMap[post.UserID] = true
+	}
+
+	// step 3: Get all user IDs as a slice
+	var userIDs []int
+	for id := range userIDMap {
+		userIDs = append(userIDs, id)
+	}
+
+	// step 4: Query the database to get all users in one go
+	users, err := s.UserRepository.FindByIDs(ctx, s.DB, userIDs)
+	if err != nil {
+		if err == sql.ErrNoRows || users == nil {
+			return nil, fmt.Errorf("no users found for friend posts")
+		}
+		return nil, err
+	}
+
+	// step 5: Create a map for easy user lookup by ID
+	userMap := make(map[int]*entity.User)
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	var postResponses []*response.CreatePostResponse
+	for _, post := range friendPosts {
+		user, ok := userMap[post.UserID]
+		if !ok {
+			fmt.Printf("user with ID %d not found for post ID %d\n", post.UserID, post.PostID)
+			continue // Skip this post if user not found
+		}
+
+		postResponse := &response.CreatePostResponse{
+			PostID:    post.PostID,
+			UserID:    post.UserID,
+			User: response.UserSummary{
+				UserID: user.ID,
+				Username: user.Username,
+				FullName: user.Fullname,
+			},
+			Content:   post.Content,
+			Mood:      post.Mood,
+			CreatedAt:  post.CreatedAt,
+		}
+		postResponses = append(postResponses, postResponse)
+	}
+
+	if len(postResponses) == 0 {
+		return nil, fmt.Errorf("no friend posts found for user with ID %d", userID)
+	}
+
+	// Step 6: Cache the response
+	jsonVal, err := json.Marshal(postResponses)
+	if err == nil {
+		_ = s.RedisClient.Set(ctx, cacheKey, jsonVal, 10*time.Minute).Err()
+	}
+
+	return postResponses, nil
+}

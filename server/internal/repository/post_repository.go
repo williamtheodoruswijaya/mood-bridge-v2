@@ -14,6 +14,7 @@ type PostRepository interface {
 	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
 	Update(ctx context.Context, tx *sql.Tx, postID int, post *entity.Post) (*entity.Post, error)
 	Delete(ctx context.Context, tx *sql.Tx, postID int) (string, error)
+	GetFriendPosts(ctx context.Context, db *sql.DB, userID int) ([]*entity.Post, error)
 }
 
 type PostRepositoryImpl struct {
@@ -140,4 +141,44 @@ func (r *PostRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, postID int)
 
 	// step 5: return hasilnya
 	return "Post with ID " + strconv.Itoa(deletedPostID) + " deleted successfully", nil
+}
+
+func (r *PostRepositoryImpl) GetFriendPosts(ctx context.Context, db *sql.DB, userID int) ([]*entity.Post, error) {
+	query := `
+		SELECT p.postid, p.userid, p.content, p.mood, p.createdat
+		FROM posts p
+		WHERE p.userid IN (
+    	SELECT
+        	CASE 
+            	WHEN userid = $1 THEN frienduserid
+            	ELSE userid
+        	END AS friend_userid
+    	FROM friends
+    	WHERE (userid = $1 OR frienduserid = $1)
+      	AND friendstatus = TRUE
+		)
+		ORDER BY p.createdat DESC;
+	`
+
+	rows, err := db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*entity.Post
+	for rows.Next() {
+		var post entity.Post
+		err := rows.Scan(&post.PostID, &post.UserID, &post.Content, &post.Mood, &post.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }

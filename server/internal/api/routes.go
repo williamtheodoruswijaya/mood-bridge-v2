@@ -89,6 +89,7 @@ func initRoutes(h Handlers) *gin.Engine {
 		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 		post.PUT("/update/:id", h.PostHandler.Update)
 		post.DELETE("/delete/:id", h.PostHandler.Delete)
+		post.GET("/friend-posts/:id", h.PostHandler.GetFriendPosts)
 	}
 
 	comment := api.Group("/comment")
