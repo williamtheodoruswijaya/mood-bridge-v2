@@ -114,7 +114,7 @@ export default function HomePage() {
     if (loading) return <p className="text-black">Loading posts...</p>;
     if (posts.length === 0)
       return <p className="text-black">No posts available</p>;
-    return posts.map((post) => <Post key={post.postID} {...post} />);
+    return posts.map((post) => <Post key={post.postid} {...post} />);
   }
   return (
     <main className="flex min-h-screen w-full text-white">

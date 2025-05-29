@@ -1,8 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { MdComment } from "react-icons/md";
 import type { PostInterface } from "~/types/types";
 
 const Post: React.FC<PostInterface> = (props) => {
+  const router = useRouter();
   const categoryColor: Record<string, string> = {
     Normal: "#219E2C",
     Anxiety: "#FFAE00",
@@ -29,7 +31,10 @@ const Post: React.FC<PostInterface> = (props) => {
         </div>
       </div>
       <p className="mt-2 text-sm text-black">{props.content}</p>
-      <button className="mt-4 flex items-center text-sm text-gray-700 hover:text-blue-600">
+      <button
+        className="mt-4 flex items-center text-sm text-gray-700 hover:text-blue-600"
+        onClick={() => router.push(`/dashboard/comment/${props.postid}`)}
+      >
         <span className="mr-2">
           <MdComment />
         </span>{" "}

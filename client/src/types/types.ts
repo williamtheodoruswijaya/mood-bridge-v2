@@ -29,8 +29,8 @@ export interface PostResponse {
 }
 
 export interface PostInterface {
-  postID: number;
-  userID: number;
+  postid: number;
+  userid: number;
   user: {
     userid: number;
     username: string;
