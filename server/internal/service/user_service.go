@@ -109,6 +109,7 @@ func (s *UserServiceImpl) Find(ctx context.Context, username string) (*response.
 
 	// step 2: convert result ke response
 	searchedUser := response.CreateUserResponse{
+		UserID:   user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -128,6 +129,7 @@ func (s *UserServiceImpl) FindByEmail(ctx context.Context, email string) (*respo
 
 	// step 2: convert result ke response
 	searchedUser := response.CreateUserResponse{
+		UserID: 	 user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -145,6 +147,7 @@ func (s *UserServiceImpl) FindByID(ctx context.Context, id int) (*response.Creat
 	}
 
 	searchedUser := response.CreateUserResponse{
+		UserID:	user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -165,6 +168,7 @@ func (s *UserServiceImpl) FindAll(ctx context.Context) ([]*response.CreateUserRe
 	var userResponses []*response.CreateUserResponse
 	for _, user := range users {
 		userResponse := &response.CreateUserResponse{
+			UserID:    user.ID,
 			Username:  user.Username,
 			Fullname:  user.Fullname,
 			Email:     user.Email,
@@ -202,6 +206,7 @@ func (s *UserServiceImpl) Login(ctx context.Context, request request.ValidateUse
 
 	// step 5: get user response
 	userResponse := &response.CreateUserResponse{
+		UserID:   user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,

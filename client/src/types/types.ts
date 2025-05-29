@@ -16,3 +16,7 @@ export interface RegisterResponse {
   data: User;
   message: string;
 }
+
+export interface MoodPredictionResponse {
+  prediction: string;
+}

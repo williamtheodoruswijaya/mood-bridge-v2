@@ -283,6 +283,7 @@ func (h *UserHandlerImpl) Update(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
+			"error":   err.Error(),
 			"message": "Failed to update user",
 		})
 		return
