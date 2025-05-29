@@ -4,9 +4,18 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { MoodPredictionResponse, PostResponse, User } from "~/types/types";
+import type {
+  MoodPredictionResponse,
+  PostInterface,
+  PostResponse,
+  User,
+} from "~/types/types";
 
-export default function CreatePost() {
+interface CreatePostProps {
+  onPostCreated?: (post: PostInterface) => void;
+}
+
+export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const router = useRouter();
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("Your mood will appear here...");
