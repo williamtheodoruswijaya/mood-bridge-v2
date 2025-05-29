@@ -39,14 +39,14 @@ export default function LoginPage() {
   };
   return (
     <div className="flex min-h-screen">
-      <div className="hidden w-2/5 md:block">
+      <div className="hidden w-1/2 md:block">
         <Image
           src={LoginBackground}
           alt="Login Background"
           className="h-screen w-full object-cover"
         />
       </div>
-      <div className="relative flex w-full items-center justify-center bg-[#28b7be] md:w-3/5">
+      <div className="relative flex w-full items-center justify-center bg-[#28b7be] md:w-1/2">
         <div className="absolute top-6 left-6 flex items-center gap-2">
           <Image src={Icon} alt="Logo" className="h-15 w-15" />
           <h1 className="text-4xl font-bold text-white">Mood Bridge</h1>

@@ -21,3 +21,20 @@ export interface RegisterResponse {
 export interface MoodPredictionResponse {
   prediction: string;
 }
+
+export interface Post {
+  code: number;
+  data: {
+    postID: number;
+    userID: number;
+    user: {
+      userid: number;
+      username: string;
+      fullname: string;
+    };
+    content: string;
+    mood: string;
+    createdAt: string;
+  };
+  message: string;
+}
