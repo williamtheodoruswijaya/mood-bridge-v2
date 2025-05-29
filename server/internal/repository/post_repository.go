@@ -55,7 +55,7 @@ func (r *PostRepositoryImpl) Find(ctx context.Context, db *sql.DB, postID int) (
 }
 
 func (r *PostRepositoryImpl) FindAll(ctx context.Context, db *sql.DB) ([]*entity.Post, error) {
-	query := `SELECT postid, userid, content, mood, createdat FROM posts;`
+	query := `SELECT postid, userid, content, mood, createdat FROM posts ORDER BY createdat DESC;`
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -147,17 +147,19 @@ func (r *PostRepositoryImpl) GetFriendPosts(ctx context.Context, db *sql.DB, use
 	query := `
 		SELECT p.postid, p.userid, p.content, p.mood, p.createdat
 		FROM posts p
-		WHERE p.userid IN (
-    	SELECT
-        	CASE 
-            	WHEN userid = $1 THEN frienduserid
-            	ELSE userid
-        	END AS friend_userid
-    	FROM friends
-    	WHERE (userid = $1 OR frienduserid = $1)
-      	AND friendstatus = TRUE
-		)
-		ORDER BY p.createdat DESC;
+		WHERE 
+    		p.userid = $1
+    		OR p.userid IN (
+        	SELECT
+            	CASE 
+                	WHEN userid = $1 THEN frienduserid
+                	ELSE userid
+            	END AS friend_userid
+        	FROM friends
+        	WHERE (userid = $1 OR frienduserid = $1)
+        	AND friendstatus = TRUE
+    	)
+	ORDER BY p.createdat DESC;
 	`
 
 	rows, err := db.QueryContext(ctx, query, userID)
