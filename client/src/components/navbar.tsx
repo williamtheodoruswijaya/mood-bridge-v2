@@ -29,7 +29,6 @@ export default function Navbar() {
 
   useEffect(() => {
     const token = Cookies.get("token");
-
     if (token) {
       try {
         const base64Payload = token.split(".")[1];
@@ -37,7 +36,7 @@ export default function Navbar() {
         const decodedPayload = atob(base64Payload);
         const parsed = JSON.parse(decodedPayload) as {
           user: {
-            userID: number;
+            id: number;
             username: string;
             fullname: string;
             email: string;
@@ -48,7 +47,7 @@ export default function Navbar() {
         const user = parsed.user;
         if (user) {
           setUser({
-            userID: Number(user.userID),
+            userID: user.id,
             username: user.username,
             email: user.email,
             fullname: user.fullname,

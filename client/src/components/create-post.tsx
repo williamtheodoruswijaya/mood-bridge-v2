@@ -9,7 +9,7 @@ import type { MoodPredictionResponse, Post, User } from "~/types/types";
 export default function CreatePost() {
   const router = useRouter();
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("Normal");
+  const [category, setCategory] = useState("Your mood will appear here...");
   const [debouncedContent, setDebouncedContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -20,6 +20,15 @@ export default function CreatePost() {
     fullname: "",
     createdAt: "",
   });
+  const categoryColor: Record<string, string> = {
+    Normal: "#219E2C",
+    Anxiety: "#FFAE00",
+    Depression: "#0D00FF",
+    Suicidal: "#FF0000",
+    Stress: "#FF00A0",
+    Bipolar: "#8B00FF",
+    "Personality Disorder": "#000000",
+  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -110,40 +119,50 @@ export default function CreatePost() {
         // TODO: Ganti sama toast
         console.log("Post created successfully:", response.data.message);
         alert("Post created successfully: " + response.data.message);
-
-        // reset content and category
-        setContent("");
-        setCategory("Normal");
       }
     } catch (error) {
       console.error("Error creating post:", error);
-      // Ganti sama toast
+      // TODO: Ganti sama toast
       alert("Error creating post: " + (error as Error).message);
+    } finally {
+      setLoading(false);
+      setContent("");
+      setCategory("Your mood will appear here...");
+      setDebouncedContent("");
+      router.refresh();
     }
   };
 
   return (
     <div className="w-full rounded-xl bg-[#84E7EE] p-4 shadow-lg backdrop-blur-md">
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        <div className="relative w-full">
-          <div className="absolute top-1 right-2 z-10 min-w-20 rounded-md bg-white px-2 py-1 text-center text-sm font-semibold text-black shadow">
+      <form className="flex flex-col gap-1" onSubmit={handleSubmit}>
+        <div className="relative flex w-full flex-col">
+          {/* Category Label */}
+          <div
+            className="text-md absolute top-2 right-2 z-10 rounded-md px-2 py-1 text-center font-semibold text-white shadow"
+            style={{ backgroundColor: categoryColor[category] ?? "#555" }}
+          >
             {category}
           </div>
+
+          {/* Textarea */}
           <textarea
-            className="focus-outline-none w-full resize-none rounded-md bg-[#73CFD5] p-5 text-black"
+            className="focus-outline-none w-full resize-none rounded-md bg-[#73CFD5] p-5 pr-32 pb-16 text-black"
             rows={3}
-            placeholder="What's happening..."
+            placeholder="How are you feeling today? Share your thoughts..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+
+          {/* Post Button */}
+          <button
+            type="submit"
+            className="text-md absolute right-2 bottom-2 min-w-24 rounded-md bg-[#30ACFF] px-4 py-1 font-bold text-white hover:bg-[#0085DE] disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Posting..." : "Post"}
+          </button>
         </div>
-        <button
-          type="submit"
-          className="min-w-20 self-end rounded-md bg-[#4DC0D9] px-4 py-1 font-semibold text-white hover:bg-[#3AAFC9] disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? "Posting..." : "Post"}
-        </button>
       </form>
     </div>
   );
