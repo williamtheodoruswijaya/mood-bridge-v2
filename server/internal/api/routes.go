@@ -82,10 +82,10 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	post := api.Group("/post")
 	{
+		post.GET("/all", h.PostHandler.FindAll)
 		post.Use(middleware.Authenticate())
 		post.POST("/create", h.PostHandler.Create)
 		post.GET("/by-id/:id", h.PostHandler.Find)
-		post.GET("/all", h.PostHandler.FindAll)
 		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 		post.PUT("/update/:id", h.PostHandler.Update)
 		post.DELETE("/delete/:id", h.PostHandler.Delete)

@@ -38,6 +38,10 @@ export default function CreatePost() {
   }, [content]);
 
   useEffect(() => {
+    if (debouncedContent.length <= 0) {
+      setCategory("Write something here...");
+      return;
+    }
     if (!debouncedContent) return;
 
     const getCategory = async () => {
@@ -137,24 +141,21 @@ export default function CreatePost() {
     <div className="w-full rounded-xl bg-[#84E7EE] p-4 shadow-lg backdrop-blur-md">
       <form className="flex flex-col gap-1" onSubmit={handleSubmit}>
         <div className="relative flex w-full flex-col">
-          {/* Category Label */}
           <div
             className="text-md absolute top-2 right-2 z-10 rounded-md px-2 py-1 text-center font-semibold text-white shadow"
-            style={{ backgroundColor: categoryColor[category] ?? "#555" }}
+            style={{ backgroundColor: categoryColor[category] ?? "#687669" }}
           >
             {category}
           </div>
 
-          {/* Textarea */}
           <textarea
-            className="focus-outline-none w-full resize-none rounded-md bg-[#73CFD5] p-5 pr-32 pb-16 text-black"
-            rows={3}
+            className="w-full resize-none rounded-md bg-[#73CFD5] p-5 pr-32 pb-16 text-black focus:outline-none"
+            rows={2}
             placeholder="How are you feeling today? Share your thoughts..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
 
-          {/* Post Button */}
           <button
             type="submit"
             className="text-md absolute right-2 bottom-2 min-w-24 rounded-md bg-[#30ACFF] px-4 py-1 font-bold text-white hover:bg-[#0085DE] disabled:opacity-50"

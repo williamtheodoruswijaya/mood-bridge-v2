@@ -40,7 +40,7 @@ export default function Sidebar() {
         <nav className="flex flex-col gap-4">
           {items.map((item) => {
             const isLogout = item.title === "Log out";
-            const activeClass = isActive(item.url) ? "bg-[#59CBD1]" : "";
+            const activeClass = isActive(item.url) ? "bg-[#00A6FF]" : "";
 
             return isLogout ? (
               <button

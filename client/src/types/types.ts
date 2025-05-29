@@ -22,19 +22,21 @@ export interface MoodPredictionResponse {
   prediction: string;
 }
 
-export interface Post {
+export interface PostResponse {
   code: number;
-  data: {
-    postID: number;
-    userID: number;
-    user: {
-      userid: number;
-      username: string;
-      fullname: string;
-    };
-    content: string;
-    mood: string;
-    createdAt: string;
-  };
+  data: PostInterface[];
   message: string;
+}
+
+export interface PostInterface {
+  postID: number;
+  userID: number;
+  user: {
+    userid: number;
+    username: string;
+    fullname: string;
+  };
+  content: string;
+  mood: string;
+  createdAt: string;
 }
