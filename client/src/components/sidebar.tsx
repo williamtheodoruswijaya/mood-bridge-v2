@@ -8,7 +8,7 @@ import { MdDashboard, MdLogout } from "react-icons/md";
 import { FaCompass } from "react-icons/fa";
 import { BsChatSquareDots } from "react-icons/bs";
 import { PiStarFourFill } from "react-icons/pi";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
 const items = [
@@ -20,14 +20,16 @@ const items = [
 ];
 
 export default function Sidebar() {
+  const router = useRouter();
   const pathname = usePathname();
   const isActive = (url: string) => pathname === url;
   const handleLogout = () => {
     // clear cookies
     Cookies.remove("token");
     Cookies.remove("user");
-    // redirect to home page
+    // refresh the page
     window.location.href = "/";
+    router.push("/");
   };
 
   return (

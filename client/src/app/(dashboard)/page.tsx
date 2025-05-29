@@ -1,35 +1,114 @@
 "use client";
 import axios from "axios";
+import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import CreatePost from "~/components/create-post";
 import Post from "~/components/post";
-import type { PostInterface, PostResponse } from "~/types/types";
+import type { PostInterface, PostResponse, User } from "~/types/types";
 
 export default function HomePage() {
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User>({
+    userID: 0,
+    username: "",
+    email: "",
+    fullname: "",
+    createdAt: "",
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get<PostResponse>(
-          "http://localhost:8080/api/post/all",
-        );
-        if (response.status === 200) {
-          setPosts(response.data.data);
-        } else {
-          console.error("Failed to fetch posts:", response.data.message);
+    const fetchUserAndPosts = async () => {
+      const token = Cookies.get("token");
+      let parsedUser = null;
+      setIsLoggedIn(false);
+      if (token) {
+        try {
+          const base64Payload = token.split(".")[1];
+          if (!base64Payload) throw new Error("Invalid token format");
+          const decodedPayload = atob(base64Payload);
+          parsedUser = JSON.parse(decodedPayload) as {
+            user: {
+              id: number;
+              username: string;
+              fullname: string;
+              email: string;
+              created_at: string;
+            };
+            exp: number;
+          };
+          const user = parsedUser.user;
+          if (user) {
+            setUser({
+              userID: user.id,
+              username: user.username,
+              email: user.email,
+              fullname: user.fullname,
+              createdAt: user.created_at,
+            });
+            setIsLoggedIn(true);
+          }
+        } catch (err) {
+          console.error("Token parsing failed:", err);
+          setIsLoggedIn(false);
         }
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setLoading(false);
+      }
+
+      setLoading(true);
+
+      const fetchAllPosts = async () => {
+        const apiUrl = "http://localhost:8080/api/post/all";
+        try {
+          const response = await axios.get<PostResponse>(apiUrl);
+          if (response.status === 200) {
+            setPosts(response.data.data);
+          } else {
+            console.error("Failed to fetch all posts:", response.statusText);
+          }
+        } catch (error) {
+          console.error("Error fetching all posts:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const fetchFriendPosts = async (userID: number) => {
+        const apiUrl = `http://localhost:8080/api/post/friend-posts/${userID}`;
+        try {
+          const response = await axios.get<PostResponse>(apiUrl, {
+            headers: {
+              Authorization: `Bearer ${Cookies.get("token")}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (response.status === 200) {
+            setPosts(response.data.data);
+          } else {
+            console.error("Failed to fetch friend posts:", response.statusText);
+            await fetchAllPosts(); // fallback
+          }
+        } catch (error) {
+          console.error("Error fetching friend posts:", error);
+          await fetchAllPosts(); // fallback
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (parsedUser && parsedUser.user.id > 0) {
+        await fetchFriendPosts(parsedUser.user.id);
+      } else {
+        await fetchAllPosts();
       }
     };
-    fetchPosts().catch((error) => {
-      console.error("Error in useEffect:", error);
+
+    fetchUserAndPosts().catch((error) => {
+      console.error("Error in fetchUserAndPosts:", error);
       setLoading(false);
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   function renderPosts() {
     if (loading) return <p className="text-black">Loading posts...</p>;
     if (posts.length === 0)
