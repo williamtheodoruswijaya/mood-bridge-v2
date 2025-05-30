@@ -2,11 +2,12 @@
 
 import axios from "axios";
 import Cookies from "js-cookie";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DecodeUserFromToken } from "~/utils/utils";
 import PostDetail from "~/components/post-detail";
 import {
+  type CommentDetailResponse,
   type CommentInterface,
   type CommentResponse,
   type PostInterface,
@@ -17,8 +18,9 @@ import Comment from "~/components/comment";
 export default function Page() {
   const params = useParams();
   const postID = params.id;
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState<CommentInterface[]>([]);
   const [user, setUser] = useState({
     userID: 0,
@@ -52,6 +54,56 @@ export default function Page() {
     if (value.trim() === "") {
       setRows(1);
       setFocused(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoggedIn) router.push("/login");
+    if (!value.trim()) return;
+    setLoading(true);
+    try {
+      const response = await axios.post<CommentDetailResponse>(
+        "http://localhost:8080/api/comment/create",
+        {
+          postid: parseInt(postID as string, 10),
+          userid: user.userID,
+          content: value,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (response.status === 200) {
+        const newComment: CommentInterface = {
+          commentid: response.data.data.commentid,
+          postid: response.data.data.postid,
+          userid: response.data.data.userid,
+          content: response.data.data.content,
+          created_at: response.data.data.created_at,
+          user: {
+            userid: user.userID,
+            username: user.username,
+            fullname: user.fullname,
+          },
+        };
+        setComments((prevComments) => [...prevComments, newComment]);
+
+        // TODO: Ganti sama toast
+        console.log("Comment posted successfully:", response.data.message);
+        alert("Comment posted successfully: " + response.data.message);
+      }
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+      return;
+    } finally {
+      setLoading(false);
+      setValue(""); // Clear the textarea after submission
+      setRows(1); // Reset rows to 1
+      setFocused(false); // Reset focus state
     }
   };
 
@@ -147,10 +199,12 @@ export default function Page() {
               />
               {(focused || value.trim() !== "") && (
                 <button
-                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  type="submit"
                   className="absolute right-3 bottom-3 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                 >
-                  Post Comment
+                  {loading ? "Posting..." : "Post Comment"}
                 </button>
               )}
             </div>

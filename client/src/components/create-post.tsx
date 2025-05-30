@@ -115,16 +115,16 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     if (!content.trim()) return;
     setLoading(true);
     try {
-      console.log("user", user);
       const response = await axios.post<PostResponse>(
         "http://localhost:8080/api/post/create",
         {
-          userID: user.userID,
+          userid: user.userID,
           content: content,
         },
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("token")}`,
+            "Content-Type": "application/json",
           },
         },
       );

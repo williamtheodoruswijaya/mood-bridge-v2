@@ -53,6 +53,12 @@ export interface CommentResponse {
   message: string;
 }
 
+export interface CommentDetailResponse {
+  code: number;
+  data: CommentInterface;
+  message: string;
+}
+
 export interface CommentInterface {
   commentid: number;
   postid: number;
