@@ -28,6 +28,12 @@ export interface PostResponse {
   message: string;
 }
 
+export interface PostResponseDetail {
+  code: number;
+  data: PostInterface;
+  message: string;
+}
+
 export interface PostInterface {
   postid: number;
   userid: number;

@@ -1,4 +1,3 @@
-"use client";
 import { useRouter } from "next/navigation";
 import { MdComment } from "react-icons/md";
 import type { PostInterface } from "~/types/types";
