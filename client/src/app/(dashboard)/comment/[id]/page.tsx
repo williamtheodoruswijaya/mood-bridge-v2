@@ -37,7 +37,7 @@ export default function Page() {
   const [focused, setFocused] = useState(false);
 
   const handleFocus = () => {
-    setRows(5);
+    setRows(4);
     setFocused(true);
   };
 
@@ -55,7 +55,6 @@ export default function Page() {
           `http://localhost:8080/api/post/by-id/${postID}`,
           {
             headers: {
-              Authorization: `Bearer ${Cookies.get("token")}`,
               "Content-Type": "application/json",
             },
           },
@@ -83,13 +82,18 @@ export default function Page() {
             createdAt: user.user.created_at,
           });
           setIsLoggedIn(true);
-          await fetchPost(postID as string);
         }
       }
     };
+    if (postID) {
+      fetchPost(postID as string).catch((error) => {
+        console.error("Error fetching post:", error);
+      });
+    } else {
+      console.error("Post ID is not provided");
+    }
     fetchUserAndPosts().catch((error) => {
       console.error("Error fetching user and posts:", error);
-      setLoading(false);
     });
   }, [postID]);
 
@@ -98,27 +102,29 @@ export default function Page() {
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
           <PostDetail {...post} />
-          <div className="relative mt-4">
-            <textarea
-              id="comment"
-              name="comment"
-              rows={rows}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              className="block w-full resize-none rounded-lg border border-gray-300 p-3 pr-24 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-              placeholder="Share your thoughts..."
-            />
-            {(focused || value.trim() !== "") && (
-              <button
-                type="button"
-                className="absolute right-3 bottom-3 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >
-                Post Comment
-              </button>
-            )}
-          </div>
+          {isLoggedIn && (
+            <div className="relative mt-4">
+              <textarea
+                id="comment"
+                name="comment"
+                rows={rows}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="block w-full resize-none rounded-lg border border-gray-300 p-3 pr-24 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                placeholder="Share your thoughts..."
+              />
+              {(focused || value.trim() !== "") && (
+                <button
+                  type="button"
+                  className="absolute right-3 bottom-3 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                >
+                  Post Comment
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </main>
