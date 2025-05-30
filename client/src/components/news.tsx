@@ -51,7 +51,7 @@ const articles = [
 
 export default function News() {
   return (
-    <div className="mx-auto max-w-md space-y-4 rounded-xl bg-[#b7f9fd] p-6 shadow-lg">
+    <div className="mx-auto max-w-md space-y-4 rounded-xl bg-[#ffffff] p-6 shadow-lg">
       <h1 className="text-xl font-semibold text-gray-800">Community Trends</h1>
       {articles.slice(0, 5).map((article, index) => (
         <a

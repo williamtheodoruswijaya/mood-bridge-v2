@@ -6,6 +6,7 @@ import CreatePost from "~/components/create-post";
 import News from "~/components/news";
 import Post from "~/components/post";
 import type { PostInterface, PostResponse, User } from "~/types/types";
+import { DecodeUserFromToken } from "~/utils/utils";
 
 export default function HomePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -36,43 +37,22 @@ export default function HomePage() {
   useEffect(() => {
     const fetchUserAndPosts = async () => {
       const token = Cookies.get("token");
-      let parsedUser = null;
       setIsLoggedIn(false);
 
       if (token) {
-        try {
-          const base64Payload = token.split(".")[1];
-          if (!base64Payload) throw new Error("Invalid token format");
-          const decodedPayload = atob(base64Payload);
-          parsedUser = JSON.parse(decodedPayload) as {
-            user: {
-              id: number;
-              username: string;
-              fullname: string;
-              email: string;
-              created_at: string;
-            };
-            exp: number;
-          };
-          const user = parsedUser.user;
-          if (user) {
-            setUser({
-              userID: user.id,
-              username: user.username,
-              email: user.email,
-              fullname: user.fullname,
-              createdAt: user.created_at,
-            });
-            setIsLoggedIn(true);
-          }
-        } catch (err) {
-          console.error("Token parsing failed:", err);
-          setIsLoggedIn(false);
+        const user = DecodeUserFromToken(token);
+        if (user) {
+          setUser({
+            userID: user.user.id,
+            username: user.user.username,
+            email: user.user.email,
+            fullname: user.user.fullname,
+            createdAt: user.user.created_at,
+          });
+          setIsLoggedIn(true);
         }
       }
-
       setLoading(true);
-
       const fetchAllPosts = async () => {
         const apiUrl = `http://localhost:8080/api/post/all?limit=${limit}&offset=${offset}`;
         try {
@@ -125,8 +105,8 @@ export default function HomePage() {
         }
       };
 
-      if (parsedUser && parsedUser.user.id > 0) {
-        await fetchFriendPosts(parsedUser.user.id, limit, offset);
+      if (isLoggedIn && user.userID > 0) {
+        await fetchFriendPosts(user.userID, limit, offset);
       } else {
         await fetchAllPosts();
       }
@@ -156,7 +136,7 @@ export default function HomePage() {
 
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [loading, hasMore]);
+  }, [loading, hasMore]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (offset === 0) return;
@@ -214,7 +194,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="grid h-screen w-full grid-cols-[1fr_400px] text-white">
+    <main className="grid h-screen w-full grid-cols-[1fr_500px] text-white">
       <section ref={scrollRef} className="overflow-y-auto px-6">
         <div className="mx-auto mt-4 max-w-4xl">
           <CreatePost

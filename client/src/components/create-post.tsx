@@ -147,7 +147,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
   };
 
   return (
-    <div className="w-full rounded-xl bg-[#82f7ff] p-4 shadow-xl backdrop-blur-md">
+    <div className="w-full rounded-xl border-gray-200 bg-[#bff0ff] p-4 shadow-xl backdrop-blur-md">
       <form className="flex flex-col gap-1" onSubmit={handleSubmit}>
         <div className="relative flex w-full flex-col">
           <div
@@ -158,7 +158,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
           </div>
 
           <textarea
-            className="w-full resize-none rounded-md bg-[#b7f9fd] p-5 pr-32 pb-16 text-black focus:outline-none"
+            className="w-full resize-none rounded-md bg-[#ffffff] p-5 pr-32 pb-16 text-black focus:outline-none"
             rows={2}
             placeholder="How are you feeling today? Share your thoughts..."
             value={content}

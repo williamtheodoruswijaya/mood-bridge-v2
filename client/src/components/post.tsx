@@ -14,7 +14,7 @@ const Post: React.FC<PostInterface> = (props) => {
     "Personality Disorder": "#000000",
   };
   return (
-    <div className="w-full rounded-xl bg-[#84E7EE] p-4 shadow-lg backdrop-blur-md">
+    <div className="w-full rounded-xl border-gray-200 bg-white p-5 shadow-md">
       <div className="flex items-start justify-between">
         <div className="text-lg font-bold text-black">
           {props.user.fullname}{" "}

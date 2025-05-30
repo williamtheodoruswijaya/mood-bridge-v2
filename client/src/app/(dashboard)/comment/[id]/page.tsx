@@ -4,7 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Post from "~/components/post";
+import { DecodeUserFromToken } from "~/utils/utils";
 import PostDetail from "~/components/post-detail";
 import { type PostInterface, type PostResponseDetail } from "~/types/types";
 
@@ -31,77 +31,79 @@ export default function Page() {
     content: "",
     mood: "",
     createdAt: "",
-  })
+  });
+
   useEffect(() => {
     const fetchPost = async (postID: string) => {
       try {
-        const response = await axios.get<PostResponseDetail>(`http://localhost:8080/api/post/by-id/${postID}`,
+        const response = await axios.get<PostResponseDetail>(
+          `http://localhost:8080/api/post/by-id/${postID}`,
           {
             headers: {
               Authorization: `Bearer ${Cookies.get("token")}`,
               "Content-Type": "application/json",
-            }
-          }
-        )
+            },
+          },
+        );
         if (response.status === 200) {
-          const fetchedPost = response.data.data;
-          setPost(fetchedPost);
+          setPost(response.data.data);
+        } else {
+          console.error("Failed to fetch post:", response.statusText);
         }
       } catch (error) {
         console.error("Error fetching post:", error);
-      } finally {
-        setLoading(false);
       }
-    }
-
+    };
     const fetchUserAndPosts = async () => {
       const token = Cookies.get("token");
-      let parsedUser = null;
       setIsLoggedIn(false);
       if (token) {
-        try {
-          const base64Payload = token.split(".")[1];
-          if (!base64Payload) throw new Error("Invalid token format");
-          const decodedPayload = atob(base64Payload);
-          parsedUser = JSON.parse(decodedPayload) as {
-            user: {
-              id: number;
-              username: string;
-              fullname: string;
-              email: string;
-              created_at: string;
-            };
-            exp: number;
-          };
-          const user = parsedUser.user;
-          if (user) {
-            setUser({
-              userID: user.id,
-              username: user.username,
-              email: user.email,
-              fullname: user.fullname,
-              createdAt: user.created_at,
-            })
-            fetchPost(postID as string);
-            setIsLoggedIn(true);
-          }
-        } catch (err) {
-          console.error("Token parsing failed:", err);
-          setIsLoggedIn(false);
+        const user = DecodeUserFromToken(token);
+        if (user) {
+          setUser({
+            userID: user.user.id,
+            username: user.user.username,
+            email: user.user.email,
+            fullname: user.user.fullname,
+            createdAt: user.user.created_at,
+          });
+          setIsLoggedIn(true);
+          await fetchPost(postID as string);
         }
       }
-    }
+    };
     fetchUserAndPosts().catch((error) => {
       console.error("Error fetching user and posts:", error);
       setLoading(false);
-    })
-  }, [])
+    });
+  }, [postID]);
 
   return (
     <main className="grid h-screen w-full">
-      <section className=" px-6">
+      <section className="px-6">
         <div className="mx-auto mt-4 w-full">
-          <PostDetail {...post}/>
+          <PostDetail {...post} />
+          <div className="mt-6">
+            <label
+              htmlFor="comment"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Write a comment
+            </label>
+            <textarea
+              id="comment"
+              name="comment"
+              rows={4}
+              className="focus:ring-opacity-50 mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+              placeholder="Share your thoughts..."
+            />
+            <button
+              type="button"
+              className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              Post Comment
+            </button>
+          </div>
         </div>
       </section>
     </main>
