@@ -18,12 +18,12 @@ import (
 type PostService interface {
 	Create(ctx context.Context, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 	Find(ctx context.Context, postID int) (*response.CreatePostResponse, error)
-	FindAll(ctx context.Context) ([]*response.CreatePostResponse, error)
+	FindAll(ctx context.Context, limit, offset int) ([]*response.CreatePostResponse, error)
 	FindByUserID(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
 	Update(ctx context.Context, postID int, req request.CreatePostRequest) (*response.CreatePostResponse, error)
 	Delete(ctx context.Context, postID int) (string, error)
 	// GetPostBySearch(ctx context.Context, query string) ([]*response.CreatePostResponse, error)
-	GetFriendPosts(ctx context.Context, userID int) ([]*response.CreatePostResponse, error)
+	GetFriendPosts(ctx context.Context, userID, limit, offset int) ([]*response.CreatePostResponse, error)
 }
 
 type PostServiceImpl struct {
@@ -162,9 +162,9 @@ func (s *PostServiceImpl) Find(ctx context.Context, postID int) (*response.Creat
 	return &postResponse, nil
 }
 
-func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostResponse, error) {
+func (s *PostServiceImpl) FindAll(ctx context.Context, limit, offset int) ([]*response.CreatePostResponse, error) {
 	// step 0: Check cache-nya dulu (apakah data yang diretrieve ada perubahan atau engga)
-	cacheKey := fmt.Sprintf("post:all:v%d", cacheVersion)
+	cacheKey := fmt.Sprintf("post:all:v%d:limit:%d:offset:%d", cacheVersion, limit, offset)
 	cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
 		var postResp []*response.CreatePostResponse
@@ -174,7 +174,7 @@ func (s *PostServiceImpl) FindAll(ctx context.Context) ([]*response.CreatePostRe
 	}
 
 	// step 1: find all posts (fetch dari database jika tidak ada di cache)
-	posts, err := s.PostRepository.FindAll(ctx, s.DB)
+	posts, err := s.PostRepository.FindAll(ctx, s.DB, limit, offset)
 	if err != nil {
 		if err == sql.ErrNoRows || posts == nil {
 			return nil, fmt.Errorf("no posts found")
@@ -419,8 +419,8 @@ func (s *PostServiceImpl) Delete(ctx context.Context, postID int) (string, error
 // 	// nanti diisinya besok.
 // }
 
-func (s *PostServiceImpl) GetFriendPosts(ctx context.Context, userID int) ([]*response.CreatePostResponse, error) {
-	cacheKey := fmt.Sprintf("friend_posts:%d:v%d", userID, cacheVersion)
+func (s *PostServiceImpl) GetFriendPosts(ctx context.Context, userID, limit, offset int) ([]*response.CreatePostResponse, error) {
+	cacheKey := fmt.Sprintf("friend_posts:%d:limit=%d:offset=%d:v%d", userID, limit, offset, cacheVersion)
 	cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
 		var postResp []*response.CreatePostResponse
@@ -430,7 +430,7 @@ func (s *PostServiceImpl) GetFriendPosts(ctx context.Context, userID int) ([]*re
 	}
 
 	// Step 1: Get friend posts from repository
-	friendPosts, err := s.PostRepository.GetFriendPosts(ctx, s.DB, userID)
+	friendPosts, err := s.PostRepository.GetFriendPosts(ctx, s.DB, userID, limit, offset)
 	if err != nil {
 		if err == sql.ErrNoRows || friendPosts == nil {
 			return nil, fmt.Errorf("no friend posts found for user with ID %d", userID)

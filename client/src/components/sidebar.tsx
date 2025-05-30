@@ -10,14 +10,7 @@ import { BsChatSquareDots } from "react-icons/bs";
 import { PiStarFourFill } from "react-icons/pi";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-
-const items = [
-  { title: "Dashboard", icon: MdDashboard, url: "/" },
-  { title: "Explore", icon: FaCompass, url: "/explore" },
-  { title: "Messenger", icon: BsChatSquareDots, url: "/messenger" },
-  { title: "Check your mood", icon: PiStarFourFill, url: "/check-mood" },
-  { title: "Log out", icon: MdLogout, url: "/logout" },
-];
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -31,6 +24,26 @@ export default function Sidebar() {
     window.location.href = "/";
     router.push("/");
   };
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  const items = [
+    { title: "Dashboard", icon: MdDashboard, url: "/" },
+    { title: "Explore", icon: FaCompass, url: "/explore" },
+    { title: "Messenger", icon: BsChatSquareDots, url: "/messenger" },
+    { title: "Check your mood", icon: PiStarFourFill, url: "/check-mood" },
+    ...(isLoggedIn
+      ? [{ title: "Log out", icon: MdLogout, url: "/logout" }]
+      : []),
+  ];
 
   return (
     <aside className="hidden w-64 flex-col justify-between bg-[#28b7be] p-4 md:block">
