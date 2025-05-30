@@ -27,6 +27,7 @@ export default function RegisterPage() {
       );
       if (response.status === 200) {
         // part ini nanti diganti sama toast
+        console.log(response)
         console.log("Registration successful:", response.data.message);
         alert("Registration successful: " + response.data.message);
         router.push("/login");

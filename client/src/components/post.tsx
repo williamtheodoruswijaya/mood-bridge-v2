@@ -1,7 +1,7 @@
-"use client";
 import { useRouter } from "next/navigation";
 import { MdComment } from "react-icons/md";
 import type { PostInterface } from "~/types/types";
+import { TimeAgo } from "~/utils/utils";
 
 const Post: React.FC<PostInterface> = (props) => {
   const router = useRouter();
@@ -15,12 +15,15 @@ const Post: React.FC<PostInterface> = (props) => {
     "Personality Disorder": "#000000",
   };
   return (
-    <div className="w-full rounded-xl bg-[#84E7EE] p-4 shadow-lg backdrop-blur-md">
+    <div className="w-full rounded-xl border-gray-200 bg-white p-5 shadow-md">
       <div className="flex items-start justify-between">
         <div className="text-lg font-bold text-black">
           {props.user.fullname}{" "}
-          <span className="text-sm font-normal text-gray-800">
+          <span className="text-md font-normal text-gray-800">
             @{props.user.username}
+          </span>
+          <span className="px-2 text-xs font-medium text-gray-600">
+            {TimeAgo(props.createdat)}
           </span>
         </div>
         <div

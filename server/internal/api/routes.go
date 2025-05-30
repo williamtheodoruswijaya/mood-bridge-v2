@@ -83,9 +83,9 @@ func initRoutes(h Handlers) *gin.Engine {
 	post := api.Group("/post")
 	{
 		post.GET("/all", h.PostHandler.FindAll)
+		post.GET("/by-id/:id", h.PostHandler.Find)
 		post.Use(middleware.Authenticate())
 		post.POST("/create", h.PostHandler.Create)
-		post.GET("/by-id/:id", h.PostHandler.Find)
 		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 		post.PUT("/update/:id", h.PostHandler.Update)
 		post.DELETE("/delete/:id", h.PostHandler.Delete)
@@ -94,10 +94,10 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	comment := api.Group("/comment")
 	{
-		comment.Use(middleware.Authenticate())
-		comment.POST("/create", h.CommentHandler.Create)
 		comment.GET("/by-postid/:id", h.CommentHandler.GetAllByPostID)
 		comment.GET("/by-id/:id", h.CommentHandler.GetByID)
+		comment.Use(middleware.Authenticate())
+		comment.POST("/create", h.CommentHandler.Create)
 		comment.DELETE("/delete/:id", h.CommentHandler.Delete)
 	}
 
