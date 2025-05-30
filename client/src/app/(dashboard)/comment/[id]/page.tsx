@@ -32,6 +32,21 @@ export default function Page() {
     mood: "",
     createdAt: "",
   });
+  const [rows, setRows] = useState(1);
+  const [value, setValue] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const handleFocus = () => {
+    setRows(5);
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    if (value.trim() === "") {
+      setRows(1);
+      setFocused(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPost = async (postID: string) => {
@@ -83,26 +98,26 @@ export default function Page() {
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
           <PostDetail {...post} />
-          <div className="mt-6">
-            <label
-              htmlFor="comment"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Write a comment
-            </label>
+          <div className="relative mt-4">
             <textarea
               id="comment"
               name="comment"
-              rows={4}
-              className="focus:ring-opacity-50 mt-1 block w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+              rows={rows}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="block w-full resize-none rounded-lg border border-gray-300 p-3 pr-24 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
               placeholder="Share your thoughts..."
             />
-            <button
-              type="button"
-              className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            >
-              Post Comment
-            </button>
+            {(focused || value.trim() !== "") && (
+              <button
+                type="button"
+                className="absolute right-3 bottom-3 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              >
+                Post Comment
+              </button>
+            )}
           </div>
         </div>
       </section>
