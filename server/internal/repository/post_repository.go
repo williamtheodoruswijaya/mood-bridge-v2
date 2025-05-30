@@ -14,7 +14,7 @@ type PostRepository interface {
 	FindByUserID(ctx context.Context, db *sql.DB, postID int) ([]*entity.Post, error)
 	Update(ctx context.Context, tx *sql.Tx, postID int, post *entity.Post) (*entity.Post, error)
 	Delete(ctx context.Context, tx *sql.Tx, postID int) (string, error)
-	GetFriendPosts(ctx context.Context, db *sql.DB, userID int) ([]*entity.Post, error)
+	GetFriendPosts(ctx context.Context, db *sql.DB, userID, limit, offset int) ([]*entity.Post, error)
 }
 
 type PostRepositoryImpl struct {
@@ -147,7 +147,7 @@ func (r *PostRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, postID int)
 	return "Post with ID " + strconv.Itoa(deletedPostID) + " deleted successfully", nil
 }
 
-func (r *PostRepositoryImpl) GetFriendPosts(ctx context.Context, db *sql.DB, userID int) ([]*entity.Post, error) {
+func (r *PostRepositoryImpl) GetFriendPosts(ctx context.Context, db *sql.DB, userID, limit, offset int) ([]*entity.Post, error) {
 	query := `
 		SELECT p.postid, p.userid, p.content, p.mood, p.createdat
 		FROM posts p
@@ -163,10 +163,11 @@ func (r *PostRepositoryImpl) GetFriendPosts(ctx context.Context, db *sql.DB, use
         	WHERE (userid = $1 OR frienduserid = $1)
         	AND friendstatus = TRUE
     	)
-	ORDER BY p.createdat DESC;
+	ORDER BY p.createdat DESC
+	LIMIT $2 OFFSET $3;
 	`
 
-	rows, err := db.QueryContext(ctx, query, userID)
+	rows, err := db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
