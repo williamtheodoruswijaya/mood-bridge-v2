@@ -44,5 +44,24 @@ export interface PostInterface {
   };
   content: string;
   mood: string;
-  createdAt: string;
+  createdat: string;
+}
+
+export interface CommentResponse {
+  code: number;
+  data: CommentInterface[];
+  message: string;
+}
+
+export interface CommentInterface {
+  commentid: number;
+  postid: number;
+  userid: number;
+  user: {
+    userid: number;
+    username: string;
+    fullname: string;
+  };
+  content: string;
+  created_at: string;
 }

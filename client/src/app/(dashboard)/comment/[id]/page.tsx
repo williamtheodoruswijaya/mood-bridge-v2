@@ -6,13 +6,20 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DecodeUserFromToken } from "~/utils/utils";
 import PostDetail from "~/components/post-detail";
-import { type PostInterface, type PostResponseDetail } from "~/types/types";
+import {
+  type CommentInterface,
+  type CommentResponse,
+  type PostInterface,
+  type PostResponseDetail,
+} from "~/types/types";
+import Comment from "~/components/comment";
 
 export default function Page() {
   const params = useParams();
   const postID = params.id;
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [comments, setComments] = useState<CommentInterface[]>([]);
   const [user, setUser] = useState({
     userID: 0,
     username: "",
@@ -30,7 +37,7 @@ export default function Page() {
     },
     content: "",
     mood: "",
-    createdAt: "",
+    createdat: "",
   });
   const [rows, setRows] = useState(1);
   const [value, setValue] = useState("");
@@ -68,6 +75,26 @@ export default function Page() {
         console.error("Error fetching post:", error);
       }
     };
+    const fetchComments = async (postID: string) => {
+      try {
+        const response = await axios.get<CommentResponse>(
+          `http://localhost:8080/api/comment/by-postid/${postID}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.status === 200) {
+          setComments(response.data.data);
+        } else {
+          console.error("Failed to fetch comments:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+
     const fetchUserAndPosts = async () => {
       const token = Cookies.get("token");
       setIsLoggedIn(false);
@@ -88,6 +115,9 @@ export default function Page() {
     if (postID) {
       fetchPost(postID as string).catch((error) => {
         console.error("Error fetching post:", error);
+      });
+      fetchComments(postID as string).catch((error) => {
+        console.error("Error fetching comments:", error);
       });
     } else {
       console.error("Post ID is not provided");
@@ -125,6 +155,18 @@ export default function Page() {
               )}
             </div>
           )}
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Comments</h2>
+            {comments.length > 0 ? (
+              comments.map((comment) => (
+                <div key={comment.commentid} className="py-1">
+                  <Comment {...comment} />
+                </div>
+              ))
+            ) : (
+              <p className="mt-4 text-gray-500">No comments yet.</p>
+            )}
+          </div>
         </div>
       </section>
     </main>

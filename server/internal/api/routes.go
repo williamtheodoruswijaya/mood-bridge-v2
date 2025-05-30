@@ -94,10 +94,10 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	comment := api.Group("/comment")
 	{
-		comment.Use(middleware.Authenticate())
-		comment.POST("/create", h.CommentHandler.Create)
 		comment.GET("/by-postid/:id", h.CommentHandler.GetAllByPostID)
 		comment.GET("/by-id/:id", h.CommentHandler.GetByID)
+		comment.Use(middleware.Authenticate())
+		comment.POST("/create", h.CommentHandler.Create)
 		comment.DELETE("/delete/:id", h.CommentHandler.Delete)
 	}
 
