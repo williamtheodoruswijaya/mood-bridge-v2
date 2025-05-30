@@ -33,7 +33,7 @@ const Post: React.FC<PostInterface> = (props) => {
       <p className="mt-2 text-sm text-black">{props.content}</p>
       <button
         className="mt-4 flex items-center text-sm text-gray-700 hover:text-blue-600"
-        onClick={() => router.push(`/dashboard/comment/${props.postid}`)}
+        onClick={() => router.push(`/comment/${props.postid}`)}
       >
         <span className="mr-2">
           <MdComment />
