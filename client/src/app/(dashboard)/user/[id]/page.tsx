@@ -10,6 +10,7 @@ import {
   type User,
   type FriendInterface,
   type FriendResponse,
+  type AddOrAcceptFriendResponse,
 } from "~/types/types";
 import profile_1 from "~/assets/profile/profile-picture-1.png";
 import profile_2 from "~/assets/profile/profile-picture-2.png";
@@ -27,14 +28,14 @@ export default function Page() {
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User>({
-    userID: 0,
+    userid: 0,
     username: "",
     email: "",
     fullname: "",
     createdAt: "",
   });
   const [user, setUser] = useState<User>({
-    userID: 0,
+    userid: 0,
     username: "",
     email: "",
     fullname: "",
@@ -47,7 +48,7 @@ export default function Page() {
       const user = DecodeUserFromToken(token);
       if (user) {
         setLoggedInUser({
-          userID: user.user.id,
+          userid: user.user.id,
           username: user.user.username,
           email: user.user.email,
           fullname: user.user.fullname,
@@ -72,7 +73,7 @@ export default function Page() {
         if (response.status === 200) {
           const data = response.data.data;
           setUser({
-            userID: data.userID, // ini masih undefined karena perbedaan penulisan json (nanti di fix)
+            userid: data.userid, // ini masih undefined karena perbedaan penulisan json (nanti di fix)
             username: data.username,
             email: data.email,
             fullname: data.fullname,
@@ -168,6 +169,33 @@ export default function Page() {
     "Personality Disorder": "#000000",
   };
 
+  const addFriend = async () => {
+    if (!isLoggedIn || loggedInUser.username === user.username) return;
+
+    try {
+      await axios.post<AddOrAcceptFriendResponse>(
+        `http://localhost:8080/api/friend/add`,
+        {
+          userid: loggedInUser.userid,
+          frienduserid: user.userid,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      // TODO: Handle error using toast
+      console.error("Error adding friend:", error);
+    }
+  };
+
+  const removeFriend = async (userID: number) => {
+    if (!isLoggedIn || loggedInUser.username === user.username) return;
+  };
+
   return (
     <main className="grid h-screen w-full">
       <section className="px-6">
@@ -208,17 +236,23 @@ export default function Page() {
 
             {/* Bottom-right Add Friend Button */}
             {isLoggedIn &&
-              loggedInUser.username !== user.username &&
+              loggedInUser.userid !== user.userid &&
               (friends.some(
                 (f) =>
-                  f.userid === loggedInUser.userID ||
-                  f.frienduserid === loggedInUser.userID,
+                  f.userid === loggedInUser.userid ||
+                  f.frienduserid === loggedInUser.userid,
               ) ? (
-                <button className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700">
+                <button
+                  onClick={() => removeFriend(user.userid)}
+                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700"
+                >
                   Remove Friend
                 </button>
               ) : (
-                <button className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700">
+                <button
+                  onClick={addFriend}
+                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700"
+                >
                   Add Friend
                 </button>
               ))}

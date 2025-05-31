@@ -12,7 +12,7 @@ export default function Navbar() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>({
-    userID: 0,
+    userid: 0,
     username: "",
     email: "",
     fullname: "",
@@ -47,7 +47,7 @@ export default function Navbar() {
         const user = parsed.user;
         if (user) {
           setUser({
-            userID: user.id,
+            userid: user.id,
             username: user.username,
             email: user.email,
             fullname: user.fullname,

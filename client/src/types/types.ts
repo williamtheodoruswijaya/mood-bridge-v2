@@ -1,5 +1,5 @@
 export interface User {
-  userID: number;
+  userid: number;
   username: string;
   fullname: string;
   email: string;
@@ -90,4 +90,10 @@ export interface FriendInterface {
     username: string;
     fullname: string;
   };
+}
+
+export interface AddOrAcceptFriendResponse {
+  code: number;
+  data: FriendInterface;
+  message: string;
 }
