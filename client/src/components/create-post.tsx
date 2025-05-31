@@ -75,7 +75,6 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
 
   useEffect(() => {
     const token = Cookies.get("token");
-    setIsLoggedIn(false);
     if (token) {
       const user = DecodeUserFromToken(token);
       if (user) {
