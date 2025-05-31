@@ -3,16 +3,23 @@ import axios from "axios";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { RegisterResponse, User } from "~/types/types";
+import {
+  type PostResponse,
+  type PostInterface,
+  type RegisterResponse,
+  type User,
+} from "~/types/types";
 import profile_1 from "~/assets/profile/profile-picture-1.png";
 import profile_2 from "~/assets/profile/profile-picture-2.png";
 import profile_3 from "~/assets/profile/profile-picture-3.png";
 import profile_4 from "~/assets/profile/profile-picture-4.png";
 import profile_5 from "~/assets/profile/profile-picture-5.png";
+import Post from "~/components/post";
 
 export default function Page() {
   const params = useParams();
   const userID = params.id;
+  const [posts, setPosts] = useState<PostInterface[]>([]);
   const [user, setUser] = useState<User>({
     userID: 0,
     username: "",
@@ -47,8 +54,31 @@ export default function Page() {
         console.error("Error fetching user data:", error);
       }
     };
+
+    const fetchUserPosts = async (userID: string) => {
+      try {
+        const response = await axios.get<PostResponse>(
+          `http://localhost:8080/api/post/by-userid/${userID}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.status === 200) {
+          const data = response.data.data;
+          setPosts(data);
+        }
+      } catch (error) {
+        // TODO: Handle error using toast
+        console.error("Error fetching user posts:", error);
+      }
+    };
     fetchUserData(userID as string).catch((error) => {
       console.error("Failed to fetch user data:", error);
+    });
+    fetchUserPosts(userID as string).catch((error) => {
+      console.error("Failed to fetch user posts:", error);
     });
   }, [userID]);
 
@@ -68,6 +98,7 @@ export default function Page() {
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
           <div className="flex flex-row justify-between rounded-lg bg-gradient-to-t from-cyan-100 to-white p-10 shadow-md">
+            {/* Bagian Profile Atas */}
             <div className="flex flex-row">
               <Image
                 src={profilePictures[randomIndex] ?? profile_1}
@@ -90,12 +121,18 @@ export default function Page() {
                 </div>
               </div>
             </div>
-
-            {/* Right: Overall Mood */}
-            <div className="flex flex-row items-end justify-start">
-              <p className="text-xl font-medium">Overall mood:</p>
-              <div className="mt-2 h-10 w-10 rounded border-2 border-gray-500" />
-            </div>
+          </div>
+          {/* Bagian Postingan */}
+          <div className="mt-6">
+            {posts.length > 0 ? (
+              posts.map((post) => (
+                <div key={post.postid} className="py-1">
+                  <Post {...post} />
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No posts available</p>
+            )}
           </div>
         </div>
       </section>
