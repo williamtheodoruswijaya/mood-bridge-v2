@@ -37,6 +37,17 @@ func (r *FriendRepositoryImpl) AddFriend(ctx context.Context, tx *sql.Tx, friend
 		return nil, err
 	}
 
+	// step 3.1: ambil data user yang di-add
+	userQuery := `SELECT userid, username, fullname FROM users WHERE userid = $1`
+	
+	userRow := tx.QueryRowContext(ctx, userQuery, friend.FriendUserID)
+	var user entity.User
+	if err := userRow.Scan(&user.ID, &user.Username, &user.Fullname); err != nil {
+		return nil, err
+	}
+
+	newFriend.User = &user // set user ke friend
+
 	// step 4: return hasilnya
 	return &newFriend, nil
 }
@@ -180,9 +191,9 @@ func (r *FriendRepositoryImpl) GetFriendRequests(ctx context.Context, db *sql.DB
 	SELECT
 		f.friendid,
 		f.userid,
+		f.frienduserid,
 		u.username,
 		u.fullname,
-		u.email,
 		f.createdat
 	FROM 
 		friends f
@@ -205,7 +216,7 @@ func (r *FriendRepositoryImpl) GetFriendRequests(ctx context.Context, db *sql.DB
 	for rows.Next() {
 		var friend entity.Friend
 		var user entity.User
-		if err := rows.Scan(&friend.FriendID, &friend.UserID, &user.Username, &user.Fullname, &user.Email, &friend.CreatedAt); err != nil {
+		if err := rows.Scan(&friend.FriendID, &friend.UserID, &friend.FriendUserID, &user.Username, &user.Fullname, &friend.CreatedAt); err != nil {
 			return nil, err
 		}
 		friend.User = &user
