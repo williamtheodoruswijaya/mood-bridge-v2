@@ -86,11 +86,11 @@ export default function Navbar() {
               />
             </div>
 
-            <button onClick={() => router.push("/notifications")}>
+            <button onClick={() => router.push(`/notifications/${user.id}`)}>
               <IoMdNotificationsOutline className="text-2xl text-white hover:text-gray-200" />
             </button>
 
-            <button onClick={() => router.push("/profile")}>
+            <button onClick={() => router.push(`/user/${user.id}`)}>
               <FaUserCircle className="text-2xl text-white hover:text-gray-200" />
             </button>
           </div>

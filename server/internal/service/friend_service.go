@@ -97,7 +97,7 @@ func (s *FriendServiceImpl) AddFriend(ctx context.Context, req request.FriendReq
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-
+	
 	// step 8: return response
 	resp := &response.FriendResponse{
 		FriendID:    newFriend.FriendID,
@@ -106,7 +106,7 @@ func (s *FriendServiceImpl) AddFriend(ctx context.Context, req request.FriendReq
 		FriendStatus: newFriend.FriendStatus,
 		CreatedAt: newFriend.CreatedAt,
 		User: response.UserSummary{
-			UserID: newFriend.UserID,
+			UserID: newFriend.User.ID,
 			Username: newFriend.User.Username,
 			FullName: newFriend.User.Fullname,
 		},
@@ -327,7 +327,7 @@ func (s *FriendServiceImpl) GetFriendRequests(ctx context.Context, userID int) (
 			FriendStatus: friendRequest.FriendStatus,
 			CreatedAt:    friendRequest.CreatedAt,
 			User: response.UserSummary{
-				UserID:      friendRequest.User.ID,
+				UserID:      friendRequest.UserID,
 				Username:    friendRequest.User.Username,
 				FullName:    friendRequest.User.Fullname,
 			},
