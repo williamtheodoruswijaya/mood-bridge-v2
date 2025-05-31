@@ -106,9 +106,9 @@ func (s *FriendServiceImpl) AddFriend(ctx context.Context, req request.FriendReq
 		FriendStatus: newFriend.FriendStatus,
 		CreatedAt: newFriend.CreatedAt,
 		User: response.UserSummary{
-			UserID: user.ID,
-			Username: user.Username,
-			FullName: user.Fullname,
+			UserID: newFriend.UserID,
+			Username: newFriend.User.Username,
+			FullName: newFriend.User.Fullname,
 		},
 	}
 
