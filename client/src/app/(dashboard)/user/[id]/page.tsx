@@ -17,12 +17,22 @@ import profile_3 from "~/assets/profile/profile-picture-3.png";
 import profile_4 from "~/assets/profile/profile-picture-4.png";
 import profile_5 from "~/assets/profile/profile-picture-5.png";
 import Post from "~/components/post";
+import Cookies from "js-cookie";
+import { DecodeUserFromToken } from "~/utils/utils";
 
 export default function Page() {
   const params = useParams();
   const userID = params.id;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
+  const [loggedInUser, setLoggedInUser] = useState<User>({
+    userID: 0,
+    username: "",
+    email: "",
+    fullname: "",
+    createdAt: "",
+  });
   const [user, setUser] = useState<User>({
     userID: 0,
     username: "",
@@ -30,6 +40,23 @@ export default function Page() {
     fullname: "",
     createdAt: "",
   });
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      const user = DecodeUserFromToken(token);
+      if (user) {
+        setLoggedInUser({
+          userID: user.user.id,
+          username: user.user.username,
+          email: user.user.email,
+          fullname: user.user.fullname,
+          createdAt: user.user.created_at,
+        });
+        setIsLoggedIn(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async (userID: string) => {
@@ -45,7 +72,7 @@ export default function Page() {
         if (response.status === 200) {
           const data = response.data.data;
           setUser({
-            userID: data.userID,
+            userID: data.userID, // ini masih undefined karena perbedaan penulisan json (nanti di fix)
             username: data.username,
             email: data.email,
             fullname: data.fullname,
@@ -116,9 +143,9 @@ export default function Page() {
     profile_4,
     profile_5,
   ];
-  const randomIndex = useMemo(() => {
-    return Math.floor(Math.random() * profilePictures.length);
-  }, [profilePictures.length]);
+  const [randomIndex] = useState(() =>
+    Math.floor(Math.random() * profilePictures.length),
+  );
 
   const overallMood = useMemo(() => {
     const moodCount: Record<string, number> = {};
@@ -140,12 +167,13 @@ export default function Page() {
     Bipolar: "#8B00FF",
     "Personality Disorder": "#000000",
   };
+
   return (
     <main className="grid h-screen w-full">
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
           {/* Bagian Profile Atas */}
-          <div className="flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
+          <div className="relative flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
             <div className="flex flex-row">
               <Image
                 src={profilePictures[randomIndex] ?? profile_1}
@@ -177,6 +205,23 @@ export default function Page() {
                 </div>
               </div>
             </div>
+
+            {/* Bottom-right Add Friend Button */}
+            {isLoggedIn &&
+              loggedInUser.username !== user.username &&
+              (friends.some(
+                (f) =>
+                  f.userid === loggedInUser.userID ||
+                  f.frienduserid === loggedInUser.userID,
+              ) ? (
+                <button className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700">
+                  Remove Friend
+                </button>
+              ) : (
+                <button className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700">
+                  Add Friend
+                </button>
+              ))}
           </div>
 
           {/* Bagian Postingan */}

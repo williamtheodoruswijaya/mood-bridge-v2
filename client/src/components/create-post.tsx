@@ -10,6 +10,7 @@ import type {
   PostResponse,
   User,
 } from "~/types/types";
+import { DecodeUserFromToken } from "~/utils/utils";
 
 interface CreatePostProps {
   onPostCreated?: (post: PostInterface) => void;
@@ -74,38 +75,19 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
 
   useEffect(() => {
     const token = Cookies.get("token");
+    setIsLoggedIn(false);
     if (token) {
-      try {
-        const base64Payload = token.split(".")[1];
-        if (!base64Payload) throw new Error("Invalid token structure");
-        const decodedPayload = atob(base64Payload);
-        const parsed = JSON.parse(decodedPayload) as {
-          user: {
-            id: number;
-            username: string;
-            fullname: string;
-            email: string;
-            created_at: string;
-          };
-          exp: number;
-        };
-        const user = parsed.user;
-        if (user) {
-          setUser({
-            userID: user.id,
-            username: user.username,
-            email: user.email,
-            fullname: user.fullname,
-            createdAt: user.created_at,
-          });
-        }
+      const user = DecodeUserFromToken(token);
+      if (user) {
+        setUser({
+          userID: user.user.id,
+          username: user.user.username,
+          email: user.user.email,
+          fullname: user.user.fullname,
+          createdAt: user.user.created_at,
+        });
         setIsLoggedIn(true);
-      } catch (err) {
-        console.error("Token parsing failed:", err);
-        setIsLoggedIn(false);
       }
-    } else {
-      setIsLoggedIn(false);
     }
   }, []);
 
