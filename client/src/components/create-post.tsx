@@ -10,6 +10,7 @@ import type {
   PostResponse,
   User,
 } from "~/types/types";
+import { DecodeUserFromToken } from "~/utils/utils";
 
 interface CreatePostProps {
   onPostCreated?: (post: PostInterface) => void;
@@ -23,7 +24,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>({
-    userID: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
@@ -75,37 +76,17 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
   useEffect(() => {
     const token = Cookies.get("token");
     if (token) {
-      try {
-        const base64Payload = token.split(".")[1];
-        if (!base64Payload) throw new Error("Invalid token structure");
-        const decodedPayload = atob(base64Payload);
-        const parsed = JSON.parse(decodedPayload) as {
-          user: {
-            id: number;
-            username: string;
-            fullname: string;
-            email: string;
-            created_at: string;
-          };
-          exp: number;
-        };
-        const user = parsed.user;
-        if (user) {
-          setUser({
-            userID: user.id,
-            username: user.username,
-            email: user.email,
-            fullname: user.fullname,
-            createdAt: user.created_at,
-          });
-        }
+      const user = DecodeUserFromToken(token);
+      if (user) {
+        setUser({
+          id: user.user.id,
+          username: user.user.username,
+          email: user.user.email,
+          fullname: user.user.fullname,
+          createdAt: user.user.created_at,
+        });
         setIsLoggedIn(true);
-      } catch (err) {
-        console.error("Token parsing failed:", err);
-        setIsLoggedIn(false);
       }
-    } else {
-      setIsLoggedIn(false);
     }
   }, []);
 
@@ -118,7 +99,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
       const response = await axios.post<PostResponse>(
         "http://localhost:8080/api/post/create",
         {
-          userid: user.userID,
+          userid: user.id,
           content: content,
         },
         {
@@ -142,7 +123,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
       setContent("");
       setCategory("Your mood will appear here...");
       setDebouncedContent("");
-      router.refresh();
+      location.reload();
     }
   };
 

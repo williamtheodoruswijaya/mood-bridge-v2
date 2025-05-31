@@ -1,5 +1,5 @@
 export interface User {
-  userID: number;
+  id: number;
   username: string;
   fullname: string;
   email: string;
@@ -13,6 +13,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterResponse {
+  // ini tak pake juga buat retrieve user data
   code: number;
   data: User;
   message: string;
@@ -70,4 +71,29 @@ export interface CommentInterface {
   };
   content: string;
   created_at: string;
+}
+
+export interface FriendResponse {
+  code: number;
+  data: FriendInterface[];
+  message: string;
+}
+
+export interface FriendInterface {
+  id: number;
+  userid: number;
+  frienduserid: number;
+  friendstatus: boolean;
+  createdat: string;
+  user: {
+    userid: number;
+    username: string;
+    fullname: string;
+  };
+}
+
+export interface AddOrAcceptFriendResponse {
+  code: number;
+  data: FriendInterface;
+  message: string;
 }

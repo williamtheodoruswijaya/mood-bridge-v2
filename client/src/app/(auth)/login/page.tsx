@@ -27,12 +27,12 @@ export default function LoginPage() {
         Cookies.set("token", token, { expires: 7 });
         router.push("/");
       } else {
-        // part ini nanti diganti sama toast
+        // TODO: part ini nanti diganti sama toast
         console.error("Login failed:", response.data.message);
         alert("Login failed: " + response.data.message);
       }
     } catch (error) {
-      // part ini nanti diganti sama toast
+      // TODO: part ini nanti diganti sama toast
       console.error("Login error:", error);
       alert("Login error: " + (error as Error).message);
     }

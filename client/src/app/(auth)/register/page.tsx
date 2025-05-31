@@ -26,13 +26,13 @@ export default function RegisterPage() {
         },
       );
       if (response.status === 200) {
-        // part ini nanti diganti sama toast
-        console.log(response)
+        // TODO: part ini nanti diganti sama toast
+        console.log(response);
         console.log("Registration successful:", response.data.message);
         alert("Registration successful: " + response.data.message);
         router.push("/login");
       } else {
-        // part ini nanti diganti sama toast
+        // TODO: part ini nanti diganti sama toast
         console.error("Registration failed:", response.data.message);
         alert("Registration failed: " + response.data.message);
       }
