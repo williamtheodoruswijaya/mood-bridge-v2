@@ -71,9 +71,9 @@ func initRoutes(h Handlers) *gin.Engine {
 	{
 		user.POST("/register", h.UserHandler.Create)
 		user.POST("/login", h.UserHandler.Login)
+		user.GET("/by-username/:username", h.UserHandler.Find)
 
 		user.Use(middleware.Authenticate())
-		user.GET("/by-username/:username", h.UserHandler.Find)
 		user.GET("/by-email", h.UserHandler.FindByEmail)
 		user.GET("/by-id/:id", h.UserHandler.FindByID)
 		user.GET("/all", h.UserHandler.FindAll)
@@ -84,6 +84,7 @@ func initRoutes(h Handlers) *gin.Engine {
 	{
 		post.GET("/all", h.PostHandler.FindAll)
 		post.GET("/by-id/:id", h.PostHandler.Find)
+
 		post.Use(middleware.Authenticate())
 		post.POST("/create", h.PostHandler.Create)
 		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
@@ -96,6 +97,7 @@ func initRoutes(h Handlers) *gin.Engine {
 	{
 		comment.GET("/by-postid/:id", h.CommentHandler.GetAllByPostID)
 		comment.GET("/by-id/:id", h.CommentHandler.GetByID)
+
 		comment.Use(middleware.Authenticate())
 		comment.POST("/create", h.CommentHandler.Create)
 		comment.DELETE("/delete/:id", h.CommentHandler.Delete)
@@ -103,10 +105,10 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	friend := api.Group("/friend")
 	{
+		friend.GET("/all/:id", h.FriendHandler.GetFriends)
 		friend.Use(middleware.Authenticate())
 		friend.POST("/add", h.FriendHandler.AddFriend)
 		friend.POST("/accept", h.FriendHandler.AcceptRequest)
-		friend.GET("/all/:id", h.FriendHandler.GetFriends)
 		friend.DELETE("/delete/:id", h.FriendHandler.Delete)
 		friend.GET("/requests/:id", h.FriendHandler.GetFriendRequests)
 	}
