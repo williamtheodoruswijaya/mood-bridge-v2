@@ -28,6 +28,9 @@ export default function Page() {
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendInterface[]>([]);
+  const [loggedInUserFriendRequests, setLoggedInUserFriendRequests] = useState<
+    FriendInterface[]
+  >([]);
   const [loggedInUser, setLoggedInUser] = useState<User>({
     id: 0,
     username: "",
@@ -147,6 +150,25 @@ export default function Page() {
       }
     };
 
+    const fetchMyFriendRequests = async (userID: string) => {
+      try {
+        const response = await axios.get<FriendResponse>(
+          `http://localhost:8080/api/friend/requests/${userID}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.status === 200) {
+          const data = response.data.data;
+          setLoggedInUserFriendRequests(data);
+        }
+      } catch (error) {
+        console.error("Error fetching logged-in user friend requests:", error);
+      }
+    };
+
     fetchUserData(userID as string).catch((error) => {
       console.error("Failed to fetch user data:", error);
     });
@@ -159,7 +181,12 @@ export default function Page() {
     fetchUserFriendRequests(userID as string).catch((error) => {
       console.error("Failed to fetch user friend requests:", error);
     });
-  }, [userID]);
+    if (isLoggedIn) {
+      fetchMyFriendRequests(loggedInUser.id.toString()).catch((error) => {
+        console.error("Failed to fetch logged-in user friend requests:", error);
+      });
+    }
+  }, [userID, isLoggedIn, loggedInUser.id]);
 
   const profilePictures = [
     profile_1,
@@ -213,6 +240,31 @@ export default function Page() {
     } catch (error) {
       // TODO: Handle error using toast
       console.error("Error adding friend:", error);
+    } finally {
+      location.reload();
+    }
+  };
+
+  const acceptFriendRequest = async (friendID: number) => {
+    if (!isLoggedIn || loggedInUser.username === user.username) return;
+
+    try {
+      await axios.post<AddOrAcceptFriendResponse>(
+        `http://localhost:8080/api/friend/accept`,
+        {
+          userid: loggedInUser.id,
+          frienduserid: friendID, // ini orang yang mau di-accept
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      // TODO: Handle error using toast
+      console.error("Error accepting friend request:", error);
     }
   };
 
@@ -265,16 +317,37 @@ export default function Page() {
               loggedInUser.id !== user.id &&
               !friends.some(
                 (f) =>
-                  f.userid === loggedInUser.id && f.frienduserid === user.id,
+                  (f.userid === loggedInUser.id &&
+                    f.frienduserid === user.id) ||
+                  (f.userid === user.id && f.frienduserid === loggedInUser.id),
               ) &&
-              !friendRequests.some((f) => f.userid === loggedInUser.id) && (
+              (friendRequests.some((f) => f.userid === loggedInUser.id) ? (
+                <button
+                  disabled
+                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-yellow-400 px-6 py-3 font-bold text-white shadow-xl"
+                >
+                  Pending Request
+                </button>
+              ) : (
                 <button
                   onClick={addFriend}
                   className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700"
                 >
                   Add Friend
                 </button>
+              ))}
+
+            {isLoggedIn &&
+              loggedInUser.id !== user.id &&
+              loggedInUserFriendRequests.some((f) => f.userid === user.id) && (
+                <button
+                  onClick={() => acceptFriendRequest(user.id)}
+                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-green-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-green-700"
+                >
+                  Accept Request
+                </button>
               )}
+
             {isLoggedIn &&
               loggedInUser.id !== user.id &&
               friends.some(

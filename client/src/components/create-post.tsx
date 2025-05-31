@@ -124,7 +124,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
       setContent("");
       setCategory("Your mood will appear here...");
       setDebouncedContent("");
-      router.refresh();
+      location.reload();
     }
   };
 
