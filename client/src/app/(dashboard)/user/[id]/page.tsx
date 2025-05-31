@@ -195,9 +195,14 @@ export default function Page() {
     profile_4,
     profile_5,
   ];
-  const [randomIndex] = useState(() =>
-    Math.floor(Math.random() * profilePictures.length),
-  );
+  const getProfilePicture = (userid: string) => {
+    const hash = Array.from(userid).reduce(
+      (acc, char) => acc + char.charCodeAt(0),
+      0,
+    );
+    const index = hash % profilePictures.length;
+    return profilePictures[index];
+  };
 
   const overallMood = useMemo(() => {
     const moodCount: Record<string, number> = {};
@@ -312,9 +317,11 @@ export default function Page() {
           <div className="relative flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
             <div className="flex flex-row">
               <Image
-                src={profilePictures[randomIndex] ?? profile_1}
+                src={getProfilePicture(user.id.toString())!.src}
+                width={160}
+                height={160}
                 alt="profile-picture"
-                className="h-40 w-40 rounded-full object-cover shadow-lg"
+                className="rounded-full object-cover shadow-lg"
               />
               <div className="ml-10 flex flex-col justify-center">
                 <h1 className="text-3xl font-bold">{user.fullname}</h1>
