@@ -72,10 +72,10 @@ func initRoutes(h Handlers) *gin.Engine {
 		user.POST("/register", h.UserHandler.Create)
 		user.POST("/login", h.UserHandler.Login)
 		user.GET("/by-username/:username", h.UserHandler.Find)
+		user.GET("/by-id/:id", h.UserHandler.FindByID)
 
 		user.Use(middleware.Authenticate())
 		user.GET("/by-email", h.UserHandler.FindByEmail)
-		user.GET("/by-id/:id", h.UserHandler.FindByID)
 		user.GET("/all", h.UserHandler.FindAll)
 		user.PUT("/update/:id", h.UserHandler.Update)
 	}
@@ -84,10 +84,10 @@ func initRoutes(h Handlers) *gin.Engine {
 	{
 		post.GET("/all", h.PostHandler.FindAll)
 		post.GET("/by-id/:id", h.PostHandler.Find)
+		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 
 		post.Use(middleware.Authenticate())
 		post.POST("/create", h.PostHandler.Create)
-		post.GET("/by-userid/:id", h.PostHandler.FindByUserID)
 		post.PUT("/update/:id", h.PostHandler.Update)
 		post.DELETE("/delete/:id", h.PostHandler.Delete)
 		post.GET("/friend-posts/:id", h.PostHandler.GetFriendPosts)

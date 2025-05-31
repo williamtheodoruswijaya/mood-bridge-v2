@@ -13,6 +13,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterResponse {
+  // ini tak pake juga buat retrieve user data
   code: number;
   data: User;
   message: string;
