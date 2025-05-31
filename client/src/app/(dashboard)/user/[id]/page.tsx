@@ -27,6 +27,7 @@ export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
+  const [friendRequests, setFriendRequests] = useState<FriendInterface[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User>({
     id: 0,
     username: "",
@@ -126,6 +127,26 @@ export default function Page() {
       }
     };
 
+    const fetchUserFriendRequests = async (userID: string) => {
+      try {
+        const response = await axios.get<FriendResponse>(
+          `http://localhost:8080/api/friend/requests/${userID}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.status === 200) {
+          const data = response.data.data;
+          setFriendRequests(data);
+        }
+      } catch (error) {
+        // TODO: Handle error using toast
+        console.error("Error fetching user friend requests:", error);
+      }
+    };
+
     fetchUserData(userID as string).catch((error) => {
       console.error("Failed to fetch user data:", error);
     });
@@ -134,6 +155,9 @@ export default function Page() {
     });
     fetchUserFriends(userID as string).catch((error) => {
       console.error("Failed to fetch user friends:", error);
+    });
+    fetchUserFriendRequests(userID as string).catch((error) => {
+      console.error("Failed to fetch user friend requests:", error);
     });
   }, [userID]);
 
@@ -194,6 +218,8 @@ export default function Page() {
 
   const removeFriend = async (userID: number) => {
     if (!isLoggedIn || loggedInUser.username === user.username) return;
+
+    // Ambil findID-nya (cari berdasarkan )
   };
 
   return (
@@ -237,25 +263,33 @@ export default function Page() {
             {/* Bottom-right Add Friend Button */}
             {isLoggedIn &&
               loggedInUser.id !== user.id &&
-              (friends.some(
+              !friends.some(
                 (f) =>
-                  f.userid === loggedInUser.id ||
-                  f.frienduserid === loggedInUser.id,
-              ) ? (
-                <button
-                  onClick={() => removeFriend(user.id)}
-                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700"
-                >
-                  Remove Friend
-                </button>
-              ) : (
+                  f.userid === loggedInUser.id && f.frienduserid === user.id,
+              ) &&
+              !friendRequests.some((f) => f.userid === loggedInUser.id) && (
                 <button
                   onClick={addFriend}
                   className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700"
                 >
                   Add Friend
                 </button>
-              ))}
+              )}
+            {isLoggedIn &&
+              loggedInUser.id !== user.id &&
+              friends.some(
+                (f) =>
+                  (f.userid === loggedInUser.id &&
+                    f.frienduserid === user.id) ||
+                  (f.userid === user.id && f.frienduserid === loggedInUser.id),
+              ) && (
+                <button
+                  onClick={() => removeFriend(user.id)}
+                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700"
+                >
+                  Remove Friend
+                </button>
+              )}
           </div>
 
           {/* Bagian Postingan */}

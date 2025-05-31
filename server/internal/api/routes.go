@@ -106,11 +106,11 @@ func initRoutes(h Handlers) *gin.Engine {
 	friend := api.Group("/friend")
 	{
 		friend.GET("/all/:id", h.FriendHandler.GetFriends)
+		friend.GET("/requests/:id", h.FriendHandler.GetFriendRequests)
 		friend.Use(middleware.Authenticate())
 		friend.POST("/add", h.FriendHandler.AddFriend)
 		friend.POST("/accept", h.FriendHandler.AcceptRequest)
 		friend.DELETE("/delete/:id", h.FriendHandler.Delete)
-		friend.GET("/requests/:id", h.FriendHandler.GetFriendRequests)
 	}
 
 	return router
