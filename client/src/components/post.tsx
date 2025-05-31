@@ -40,10 +40,10 @@ const Post: React.FC<PostInterface> = (props) => {
       <div className="flex items-start justify-between">
         <div className="flex items-center">
           <Image
-            src={getProfilePicture(props.userid.toString())!.src}
+            src={getProfilePicture(props.userid.toString()).src}
             width={40}
             height={40}
-            alt={`${props.user.username}'s profile picture`}
+            alt="Profile-Picture"
             className="mr-3 rounded-full object-cover"
           />
           <button
