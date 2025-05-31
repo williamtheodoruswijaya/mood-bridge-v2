@@ -37,7 +37,7 @@ func (r *FriendRepositoryImpl) AddFriend(ctx context.Context, tx *sql.Tx, friend
 		return nil, err
 	}
 
-	// step 3.1: ambil data user yang di-add
+	// step 3.1: fetch the user being added
 	userQuery := `SELECT userid, username, fullname FROM users WHERE userid = $1`
 	
 	userRow := tx.QueryRowContext(ctx, userQuery, friend.FriendUserID)
