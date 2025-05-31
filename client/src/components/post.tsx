@@ -18,7 +18,7 @@ const Post: React.FC<PostInterface> = (props) => {
     <div className="w-full rounded-xl border-gray-200 bg-white p-5 shadow-md">
       <div className="flex items-start justify-between">
         <button
-          className="text-black flex items-center text-lg font-bold text-black"
+          className="text-black flex items-center text-lg font-bold"
           onClick={() => router.push(`/user/${props.userid}`)}
         >
           <div className="hover:text-blue-800 hover:underline">
