@@ -265,13 +265,43 @@ export default function Page() {
     } catch (error) {
       // TODO: Handle error using toast
       console.error("Error accepting friend request:", error);
+    } finally {
+      location.reload();
     }
   };
 
   const removeFriend = async (userID: number) => {
     if (!isLoggedIn || loggedInUser.username === user.username) return;
 
-    // Ambil findID-nya (cari berdasarkan )
+    // step 1: cari friendID dari friends (kalau userid = userID dan frienduserid = loggedInUser.id)
+    const friend = friends.find((f) => {
+      return (
+        (f.userid === userID && f.frienduserid === loggedInUser.id) ||
+        (f.userid === loggedInUser.id && f.frienduserid === userID)
+      );
+    });
+
+    // step 2: ambil id-nya
+    const friendID = friend?.id;
+    if (!friendID) return;
+
+    // step 3: panggil API untuk menghapus friend
+    try {
+      await axios.delete<AddOrAcceptFriendResponse>(
+        `http://localhost:8080/api/friend/delete/${friendID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    } catch (error) {
+      // TODO: Handle error using toast
+      console.error("Error removing friend:", error);
+    } finally {
+      location.reload();
+    }
   };
 
   return (
