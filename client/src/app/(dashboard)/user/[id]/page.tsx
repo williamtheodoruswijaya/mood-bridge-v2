@@ -8,6 +8,8 @@ import {
   type PostInterface,
   type RegisterResponse,
   type User,
+  type FriendInterface,
+  type FriendResponse,
 } from "~/types/types";
 import profile_1 from "~/assets/profile/profile-picture-1.png";
 import profile_2 from "~/assets/profile/profile-picture-2.png";
@@ -20,6 +22,7 @@ export default function Page() {
   const params = useParams();
   const userID = params.id;
   const [posts, setPosts] = useState<PostInterface[]>([]);
+  const [friends, setFriends] = useState<FriendInterface[]>([]);
   const [user, setUser] = useState<User>({
     userID: 0,
     username: "",
@@ -74,11 +77,35 @@ export default function Page() {
         console.error("Error fetching user posts:", error);
       }
     };
+
+    const fetchUserFriends = async (userID: string) => {
+      try {
+        const response = await axios.get<FriendResponse>(
+          `http://localhost:8080/api/friend/all/${userID}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        if (response.status === 200) {
+          const data = response.data.data;
+          setFriends(data);
+        }
+      } catch (error) {
+        // TODO: Handle error using toast
+        console.error("Error fetching user friends:", error);
+      }
+    };
+
     fetchUserData(userID as string).catch((error) => {
       console.error("Failed to fetch user data:", error);
     });
     fetchUserPosts(userID as string).catch((error) => {
       console.error("Failed to fetch user posts:", error);
+    });
+    fetchUserFriends(userID as string).catch((error) => {
+      console.error("Failed to fetch user friends:", error);
     });
   }, [userID]);
 
@@ -93,12 +120,32 @@ export default function Page() {
     return Math.floor(Math.random() * profilePictures.length);
   }, [profilePictures.length]);
 
+  const overallMood = useMemo(() => {
+    const moodCount: Record<string, number> = {};
+    posts.forEach((post) => {
+      moodCount[post.mood] = (moodCount[post.mood] ?? 0) + 1;
+    });
+    return Object.entries(moodCount).reduce(
+      (prev, current) => (current[1] > prev[1] ? current : prev),
+      ["neutral", 0],
+    )[0];
+  }, [posts]);
+
+  const categoryColor: Record<string, string> = {
+    Normal: "#219E2C",
+    Anxiety: "#FFAE00",
+    Depression: "#0D00FF",
+    Suicidal: "#FF0000",
+    Stress: "#FF00A0",
+    Bipolar: "#8B00FF",
+    "Personality Disorder": "#000000",
+  };
   return (
     <main className="grid h-screen w-full">
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
-          <div className="flex flex-row justify-between rounded-lg bg-gradient-to-t from-cyan-100 to-white p-10 shadow-md">
-            {/* Bagian Profile Atas */}
+          {/* Bagian Profile Atas */}
+          <div className="flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
             <div className="flex flex-row">
               <Image
                 src={profilePictures[randomIndex] ?? profile_1}
@@ -110,18 +157,28 @@ export default function Page() {
                 <p className="text-lg text-gray-600">@{user.username}</p>
                 <p className="text-md text-gray-500">{user.email}</p>
                 <div className="mt-4 flex gap-4">
-                  <div className="w-24 rounded border p-2 text-center shadow">
-                    <p className="text-xl font-semibold">30</p>
-                    <p className="text-sm text-gray-500">Friends</p>
+                  <div className="w-32 rounded-lg bg-white p-2 text-center shadow-md">
+                    <p className="text-xl font-semibold">{friends.length}</p>
+                    <p className="text-xs text-gray-500">Friends</p>
                   </div>
-                  <div className="w-24 rounded border p-2 text-center shadow">
-                    <p className="text-xl font-semibold">15</p>
-                    <p className="text-sm text-gray-500">Post</p>
+                  <div className="w-32 rounded-lg bg-white p-2 text-center shadow-md">
+                    <p className="text-xl font-semibold">{posts.length}</p>
+                    <p className="text-xs text-gray-500">Post</p>
+                  </div>
+                  <div
+                    className="w-32 rounded-lg p-2 text-center text-white shadow-md"
+                    style={{
+                      backgroundColor: categoryColor[overallMood] ?? "#687669",
+                    }}
+                  >
+                    <p className="text-xl font-semibold">{overallMood}</p>
+                    <p className="text-xs">Overall Mood</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
           {/* Bagian Postingan */}
           <div className="mt-6">
             {posts.length > 0 ? (
