@@ -16,7 +16,7 @@ export default function HomePage() {
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User>({
-    userid: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
@@ -43,7 +43,7 @@ export default function HomePage() {
         const user = DecodeUserFromToken(token);
         if (user) {
           setUser({
-            userid: user.user.id,
+            id: user.user.id,
             username: user.user.username,
             email: user.user.email,
             fullname: user.user.fullname,
@@ -105,8 +105,8 @@ export default function HomePage() {
         }
       };
 
-      if (isLoggedIn && user.userid > 0) {
-        await fetchFriendPosts(user.userid, limit, offset);
+      if (isLoggedIn && user.id > 0) {
+        await fetchFriendPosts(user.id, limit, offset);
       } else {
         await fetchAllPosts();
       }
@@ -144,8 +144,8 @@ export default function HomePage() {
     const fetchMorePosts = async () => {
       setLoading(true);
       try {
-        if (isLoggedIn && user.userid > 0) {
-          const apiUrl = `http://localhost:8080/api/post/friend-posts/${user.userid}?limit=${limit}&offset=${offset}`;
+        if (isLoggedIn && user.id > 0) {
+          const apiUrl = `http://localhost:8080/api/post/friend-posts/${user.id}?limit=${limit}&offset=${offset}`;
           const response = await axios.get<PostResponse>(apiUrl, {
             headers: {
               Authorization: `Bearer ${Cookies.get("token")}`,
@@ -183,7 +183,7 @@ export default function HomePage() {
       setLoading(false);
       setHasMore(false);
     });
-  }, [offset, isLoggedIn, user.userid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [offset, isLoggedIn, user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function renderPosts() {
     if (loading && posts.length === 0)

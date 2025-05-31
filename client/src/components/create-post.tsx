@@ -24,7 +24,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>({
-    userid: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
@@ -80,7 +80,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
       const user = DecodeUserFromToken(token);
       if (user) {
         setUser({
-          userid: user.user.id,
+          id: user.user.id,
           username: user.user.username,
           email: user.user.email,
           fullname: user.user.fullname,
@@ -100,7 +100,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
       const response = await axios.post<PostResponse>(
         "http://localhost:8080/api/post/create",
         {
-          userid: user.userid,
+          userid: user.id,
           content: content,
         },
         {

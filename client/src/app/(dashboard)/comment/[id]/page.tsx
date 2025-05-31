@@ -24,7 +24,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState<CommentInterface[]>([]);
   const [user, setUser] = useState<User>({
-    userid: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
@@ -68,7 +68,7 @@ export default function Page() {
         "http://localhost:8080/api/comment/create",
         {
           postid: parseInt(postID as string, 10),
-          userid: user.userid,
+          userid: user.id,
           content: value,
         },
         {
@@ -86,7 +86,7 @@ export default function Page() {
           content: response.data.data.content,
           created_at: response.data.data.created_at,
           user: {
-            userid: user.userid,
+            userid: user.id,
             username: user.username,
             fullname: user.fullname,
           },
@@ -155,7 +155,7 @@ export default function Page() {
         const user = DecodeUserFromToken(token);
         if (user) {
           setUser({
-            userid: user.user.id,
+            id: user.user.id,
             username: user.user.username,
             email: user.user.email,
             fullname: user.user.fullname,

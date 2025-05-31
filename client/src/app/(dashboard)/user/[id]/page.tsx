@@ -28,14 +28,14 @@ export default function Page() {
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<User>({
-    userid: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
     createdAt: "",
   });
   const [user, setUser] = useState<User>({
-    userid: 0,
+    id: 0,
     username: "",
     email: "",
     fullname: "",
@@ -48,7 +48,7 @@ export default function Page() {
       const user = DecodeUserFromToken(token);
       if (user) {
         setLoggedInUser({
-          userid: user.user.id,
+          id: user.user.id,
           username: user.user.username,
           email: user.user.email,
           fullname: user.user.fullname,
@@ -73,7 +73,7 @@ export default function Page() {
         if (response.status === 200) {
           const data = response.data.data;
           setUser({
-            userid: data.userid, // ini masih undefined karena perbedaan penulisan json (nanti di fix)
+            id: data.id,
             username: data.username,
             email: data.email,
             fullname: data.fullname,
@@ -176,8 +176,8 @@ export default function Page() {
       await axios.post<AddOrAcceptFriendResponse>(
         `http://localhost:8080/api/friend/add`,
         {
-          userid: loggedInUser.userid,
-          frienduserid: user.userid,
+          userid: loggedInUser.id,
+          frienduserid: user.id,
         },
         {
           headers: {
@@ -236,14 +236,14 @@ export default function Page() {
 
             {/* Bottom-right Add Friend Button */}
             {isLoggedIn &&
-              loggedInUser.userid !== user.userid &&
+              loggedInUser.id !== user.id &&
               (friends.some(
                 (f) =>
-                  f.userid === loggedInUser.userid ||
-                  f.frienduserid === loggedInUser.userid,
+                  f.userid === loggedInUser.id ||
+                  f.frienduserid === loggedInUser.id,
               ) ? (
                 <button
-                  onClick={() => removeFriend(user.userid)}
+                  onClick={() => removeFriend(user.id)}
                   className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700"
                 >
                   Remove Friend
