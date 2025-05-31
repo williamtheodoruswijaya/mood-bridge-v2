@@ -43,7 +43,7 @@ const Post: React.FC<PostInterface> = (props) => {
             src={getProfilePicture(props.userid.toString())!.src}
             width={40}
             height={40}
-            alt="Profile-Picture"
+            alt={`${props.user.username}'s profile picture`}
             className="mr-3 rounded-full object-cover"
           />
           <button
