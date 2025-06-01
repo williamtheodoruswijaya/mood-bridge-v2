@@ -255,6 +255,9 @@ func (r *FriendRepositoryImpl) GetFriendRecommendation(ctx context.Context, db *
 
 	var overallMood string
 	if err := row.Scan(&overallMood); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no mood found for user with id %d", userID)
+		}
 		return nil, fmt.Errorf("failed to get overall mood for user with id %d: %v", userID, err)
 	}
 
