@@ -97,3 +97,17 @@ export interface AddOrAcceptFriendResponse {
   data: FriendInterface;
   message: string;
 }
+
+export interface FriendRecommendationResponse {
+  code: number;
+  data: FriendRecommendationInterface[];
+  message: string;
+}
+
+export interface FriendRecommendationInterface {
+  userid: number;
+  username: string;
+  fullname: string;
+  email: string;
+  overall_mood: string;
+}
