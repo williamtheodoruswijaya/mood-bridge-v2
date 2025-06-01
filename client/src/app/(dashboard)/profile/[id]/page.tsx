@@ -10,7 +10,6 @@ import {
   type User,
   type FriendInterface,
   type FriendResponse,
-  type AddOrAcceptFriendResponse,
 } from "~/types/types";
 import profile_1 from "~/assets/profile/profile-picture-1.png";
 import profile_2 from "~/assets/profile/profile-picture-2.png";
@@ -20,6 +19,7 @@ import profile_5 from "~/assets/profile/profile-picture-5.png";
 import Post from "~/components/post";
 import Cookies from "js-cookie";
 import { DecodeUserFromToken } from "~/utils/utils";
+import { TbPencil, TbPencilCancel } from "react-icons/tb";
 
 export default function Page() {
   const params = useParams();
@@ -27,10 +27,6 @@ export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [posts, setPosts] = useState<PostInterface[]>([]);
   const [friends, setFriends] = useState<FriendInterface[]>([]);
-  const [friendRequests, setFriendRequests] = useState<FriendInterface[]>([]);
-  const [loggedInUserFriendRequests, setLoggedInUserFriendRequests] = useState<
-    FriendInterface[]
-  >([]);
   const [loggedInUser, setLoggedInUser] = useState<User>({
     id: 0,
     username: "",
@@ -45,6 +41,36 @@ export default function Page() {
     fullname: "",
     createdAt: "",
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUser, setEditUser] = useState({
+    username: loggedInUser.username,
+    fullname: loggedInUser.fullname,
+    email: loggedInUser.email,
+    password: "",
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditUser((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  const handleSaveChanges = async () => {
+    // TODO: Implement Backend API call
+    setIsEditing(false);
+  }
+
+  const handleCancel = () => {
+    setEditUser({
+      username: loggedInUser.username,
+      fullname: loggedInUser.fullname,
+      email: loggedInUser.email,
+      password: "",
+    });
+    setIsEditing(false);
+  };
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -129,46 +155,6 @@ export default function Page() {
         console.error("Error fetching user friends:", error);
       }
     };
-
-    const fetchUserFriendRequests = async (userID: string) => {
-      try {
-        const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/requests/${userID}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        if (response.status === 200) {
-          const data = response.data.data;
-          setFriendRequests(data);
-        }
-      } catch (error) {
-        // TODO: Handle error using toast
-        console.error("Error fetching user friend requests:", error);
-      }
-    };
-
-    const fetchMyFriendRequests = async (userID: string) => {
-      try {
-        const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/requests/${userID}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        if (response.status === 200) {
-          const data = response.data.data;
-          setLoggedInUserFriendRequests(data);
-        }
-      } catch (error) {
-        console.error("Error fetching logged-in user friend requests:", error);
-      }
-    };
-
     fetchUserData(userID as string).catch((error) => {
       console.error("Failed to fetch user data:", error);
     });
@@ -178,14 +164,6 @@ export default function Page() {
     fetchUserFriends(userID as string).catch((error) => {
       console.error("Failed to fetch user friends:", error);
     });
-    fetchUserFriendRequests(userID as string).catch((error) => {
-      console.error("Failed to fetch user friend requests:", error);
-    });
-    if (isLoggedIn) {
-      fetchMyFriendRequests(loggedInUser.id.toString()).catch((error) => {
-        console.error("Failed to fetch logged-in user friend requests:", error);
-      });
-    }
   }, [userID, isLoggedIn, loggedInUser.id]);
 
   const profilePictures = [
@@ -225,97 +203,26 @@ export default function Page() {
     "Personality Disorder": "#000000",
   };
 
-  const addFriend = async () => {
-    if (!isLoggedIn || loggedInUser.username === user.username) return;
-
-    try {
-      await axios.post<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/add`,
-        {
-          userid: loggedInUser.id,
-          frienduserid: user.id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    } catch (error) {
-      // TODO: Handle error using toast
-      console.error("Error adding friend:", error);
-    } finally {
-      location.reload();
-    }
-  };
-
-  const acceptFriendRequest = async (friendID: number) => {
-    if (!isLoggedIn || loggedInUser.username === user.username) return;
-
-    try {
-      await axios.post<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/accept`,
-        {
-          userid: loggedInUser.id,
-          frienduserid: friendID, // ini orang yang mau di-accept
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    } catch (error) {
-      // TODO: Handle error using toast
-      console.error("Error accepting friend request:", error);
-    } finally {
-      location.reload();
-    }
-  };
-
-  const removeFriend = async (userID: number) => {
-    if (!isLoggedIn || loggedInUser.username === user.username) return;
-
-    // step 1: cari friendID dari friends (kalau userid = userID dan frienduserid = loggedInUser.id)
-    const friend = friends.find((f) => {
-      return (
-        (f.userid === userID && f.frienduserid === loggedInUser.id) ||
-        (f.userid === loggedInUser.id && f.frienduserid === userID)
-      );
-    });
-
-    // step 2: ambil id-nya
-    const friendID = friend?.id;
-    if (!friendID) return;
-
-    // step 3: panggil API untuk menghapus friend
-    try {
-      await axios.delete<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/delete/${friendID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    } catch (error) {
-      // TODO: Handle error using toast
-      console.error("Error removing friend:", error);
-    } finally {
-      location.reload();
-    }
-  };
-
   return (
     <main className="grid h-screen w-full">
       <section className="px-6">
         <div className="mx-auto mt-4 w-full">
           {/* Bagian Profile Atas */}
           <div className="relative flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
-            <div className="flex flex-row">
+            {/* Tombol Edit */}
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              type="button"
+              aria-label="Edit Profile"
+              className="absolute right-4 top-4"
+            >
+              {isEditing ? (
+                <TbPencilCancel className="w-8 h-8"/>
+              ) : (
+                <TbPencil className="w-8 h-8"/>
+              )}
+            </button>
+            <div className="flex flex-row items-start gap-10">
               <Image
                 src={getProfilePicture(user.id.toString())!.src}
                 width={160}
@@ -323,10 +230,64 @@ export default function Page() {
                 alt="profile-picture"
                 className="rounded-full object-cover shadow-lg"
               />
-              <div className="ml-10 flex flex-col justify-center">
-                <h1 className="text-3xl font-bold">{user.fullname}</h1>
-                <p className="text-lg text-gray-600">@{user.username}</p>
-                <p className="text-md text-gray-500">{user.email}</p>
+              <div className=" flex flex-col justify-center">
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      name="fullname"
+                      placeholder="Full Name"
+                      value={editUser.fullname}
+                      onChange={handleInputChange}
+                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                    />
+                    <input
+                      type="text"
+                      name="username"
+                      placeholder="Username"
+                      value={editUser.username}
+                      onChange={handleInputChange}
+                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                    />
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Email"
+                      value={editUser.email}
+                      onChange={handleInputChange}
+                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                    />
+                    <input
+                      type="password"
+                      name="password"
+                      placeholder="Password"
+                      value={editUser.password}
+                      onChange={handleInputChange}
+                      className="mb-4 rounded bg-white px-2 py-1 text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveChanges}
+                        className="rounded bg-green-500 px-5 py-1 text-white"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="rounded bg-red-500 px-3 py-1 text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-bold">{user.fullname}</h1>
+                    <p className="text-lg text-gray-600">@{user.username}</p>
+                    <p className="text-md text-gray-500">{user.email}</p>
+                  </>
+                )}
+                
                 <div className="mt-4 flex gap-4">
                   <div className="w-32 rounded-lg bg-white p-2 text-center shadow-md">
                     <p className="text-xl font-semibold">{friends.length}</p>
@@ -348,58 +309,6 @@ export default function Page() {
                 </div>
               </div>
             </div>
-
-            {/* Bottom-right Add Friend Button */}
-            {isLoggedIn &&
-              loggedInUser.id !== user.id &&
-              !friends.some(
-                (f) =>
-                  (f.userid === loggedInUser.id &&
-                    f.frienduserid === user.id) ||
-                  (f.userid === user.id && f.frienduserid === loggedInUser.id),
-              ) &&
-              (friendRequests.some((f) => f.userid === loggedInUser.id) ? (
-                <button
-                  disabled
-                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-yellow-400 px-6 py-3 font-bold text-white shadow-xl"
-                >
-                  Pending Request
-                </button>
-              ) : (
-                <button
-                  onClick={addFriend}
-                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-blue-700"
-                >
-                  Add Friend
-                </button>
-              ))}
-
-            {isLoggedIn &&
-              loggedInUser.id !== user.id &&
-              loggedInUserFriendRequests.some((f) => f.userid === user.id) && (
-                <button
-                  onClick={() => acceptFriendRequest(user.id)}
-                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-green-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-green-700"
-                >
-                  Accept Request
-                </button>
-              )}
-
-            {isLoggedIn &&
-              loggedInUser.id !== user.id &&
-              friends.some(
-                (f) =>
-                  (f.userid === loggedInUser.id &&
-                    f.frienduserid === user.id) ||
-                  (f.userid === user.id && f.frienduserid === loggedInUser.id),
-              ) && (
-                <button
-                  onClick={() => removeFriend(user.id)}
-                  className="absolute right-4 bottom-4 items-center justify-center rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-xl transition-colors duration-300 hover:bg-red-700"
-                >
-                  Remove Friend
-                </button>
-              )}
           </div>
 
           {/* Bagian Postingan */}
