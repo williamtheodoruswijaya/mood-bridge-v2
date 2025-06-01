@@ -6,7 +6,12 @@ import type { User } from "~/types/types";
 import { CiSearch } from "react-icons/ci";
 import { useRouter } from "next/navigation";
 import { IoMdNotificationsOutline } from "react-icons/io";
-import { FaUserCircle } from "react-icons/fa";
+import profile_1 from "~/assets/profile/profile-picture-1.png";
+import profile_2 from "~/assets/profile/profile-picture-2.png";
+import profile_3 from "~/assets/profile/profile-picture-3.png";
+import profile_4 from "~/assets/profile/profile-picture-4.png";
+import profile_5 from "~/assets/profile/profile-picture-5.png";
+import Image from "next/image";
 
 export default function Navbar() {
   const router = useRouter();
@@ -64,6 +69,22 @@ export default function Navbar() {
     }
   }, []);
 
+  const profilePictures = [
+      profile_1,
+      profile_2,
+      profile_3,
+      profile_4,
+      profile_5,
+    ];
+  const getProfilePicture = (userid: string) => {
+    const hash = Array.from(userid).reduce(
+      (acc, char) => acc + char.charCodeAt(0),
+      0,
+    );
+    const index = hash % profilePictures.length;
+    return profilePictures[index];
+  };
+
   return (
     <nav className="flex w-full items-center justify-between bg-[#28b7be] px-6 py-3 text-white shadow">
       {isLoggedIn ? (
@@ -90,8 +111,8 @@ export default function Navbar() {
               <IoMdNotificationsOutline className="text-2xl text-white hover:text-gray-200" />
             </button>
 
-            <button onClick={() => router.push(`/user/${user.id}`)}>
-              <FaUserCircle className="text-2xl text-white hover:text-gray-200" />
+            <button onClick={() => router.push(`/profile/${user.id}`)}>
+              <Image src={getProfilePicture(user.id.toString())!.src} width={40} height={40} alt="profile-picture" className="rounded-full object-cover"/>
             </button>
           </div>
         </>
