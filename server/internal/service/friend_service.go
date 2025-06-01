@@ -21,6 +21,7 @@ type FriendService interface {
 	GetFriends(ctx context.Context, userID int) ([]*response.FriendResponse, error)
 	Delete(ctx context.Context, friendID int) (string, error)
 	GetFriendRequests(ctx context.Context, userID int) ([]*response.FriendResponse, error)
+	GetFriendRecommendation(ctx context.Context, userID int) ([]*response.FriendRecommendationResponse, error)
 }
 
 type FriendServiceImpl struct {
@@ -348,4 +349,50 @@ func (s *FriendServiceImpl) GetFriendRequests(ctx context.Context, userID int) (
 
 	// step 8: return response
 	return friendRequestResponses, nil
+}
+
+func (s *FriendServiceImpl) GetFriendRecommendation(ctx context.Context, userID int) ([]*response.FriendRecommendationResponse, error) {
+	// step 1: set cache key
+	friendRecommendationCacheKey := fmt.Sprintf("friendrecommendation:%d:v%d", userID, cacheVersion)
+
+	// step 2: get cache based on cache key
+	cachedFriendCommendations, err := s.RedisClient.Get(ctx, friendRecommendationCacheKey).Result()
+	if err == nil {
+		var friendRecommendations []*response.FriendRecommendationResponse
+		if err := json.Unmarshal([]byte(cachedFriendCommendations), &friendRecommendations); err == nil {
+			return friendRecommendations, nil
+		}
+	}
+
+	// step 3: get friend recommendations from repository
+	friendRecommendations, err := s.friendRepository.GetFriendRecommendation(ctx, s.DB, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 4: convert to response
+	var friendRecommendationResponses []*response.FriendRecommendationResponse
+	for _, friendRecommendation := range *friendRecommendations {
+		friendRecommendationResponses = append(friendRecommendationResponses, &response.FriendRecommendationResponse{
+			UserID:      friendRecommendation.User.ID,
+			Username:    friendRecommendation.User.Username,
+			Fullname:    friendRecommendation.User.Fullname,
+			Email:       friendRecommendation.User.Email,
+			OverallMood: friendRecommendation.OverallMood,
+		})
+	}
+
+	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
+	if len(friendRecommendationResponses) == 0 {
+		return []*response.FriendRecommendationResponse{}, fmt.Errorf("no friend recommendations found")
+	}
+
+	// step 6: ubah ke dalam json untuk disimpan ke cache
+	jsonData, err := json.Marshal(friendRecommendationResponses)
+	if err == nil {
+		_ = s.RedisClient.Set(ctx, friendRecommendationCacheKey, jsonData, 10*time.Minute).Err()
+	}
+
+	// step 7: return response
+	return friendRecommendationResponses, nil
 }
