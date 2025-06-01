@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import type {
   MoodPredictionResponse,
   PostInterface,
-  PostResponse,
+  PostResponseDetail,
   User,
 } from "~/types/types";
 import { DecodeUserFromToken } from "~/utils/utils";
@@ -96,7 +96,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     if (!content.trim()) return;
     setLoading(true);
     try {
-      const response = await axios.post<PostResponse>(
+      const response = await axios.post<PostResponseDetail>(
         "http://localhost:8080/api/post/create",
         {
           userid: user.id,

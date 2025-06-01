@@ -194,7 +194,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="grid h-screen w-full grid-cols-[1fr_500px] text-white">
+    <main className="grid h-screen w-full grid-cols-[1fr_400px] text-white">
       <section ref={scrollRef} className="overflow-y-auto px-6">
         <div className="mx-auto mt-4 max-w-4xl">
           <CreatePost
