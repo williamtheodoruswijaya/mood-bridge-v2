@@ -382,7 +382,7 @@ func (s *FriendServiceImpl) GetFriendRecommendation(ctx context.Context, userID 
 		})
 	}
 
-	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
+	// step 5: validate if no recommendations are found (e.g., empty result)
 	if len(friendRecommendationResponses) == 0 {
 		return []*response.FriendRecommendationResponse{}, nil
 	}
