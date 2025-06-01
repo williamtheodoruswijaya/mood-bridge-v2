@@ -317,7 +317,7 @@ export default function Page() {
                       placeholder="Full Name"
                       value={editUser.fullname}
                       onChange={handleInputChange}
-                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                      className="mb-2 rounded bg-white px-2 py-1 text-3xl font-bold"
                     />
                     <input
                       type="text"
@@ -325,7 +325,7 @@ export default function Page() {
                       placeholder="Username"
                       value={editUser.username}
                       onChange={handleInputChange}
-                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                      className="mb-2 rounded bg-white px-2 py-1 text-lg text-gray-600"
                     />
                     <input
                       type="email"
@@ -333,7 +333,7 @@ export default function Page() {
                       placeholder="Email"
                       value={editUser.email}
                       onChange={handleInputChange}
-                      className="mb-2 rounded bg-white px-2 py-1 text-sm"
+                      className="mb-2 rounded bg-white px-2 py-1 text-md text-gray-500"
                     />
                     <input
                       type="password"
