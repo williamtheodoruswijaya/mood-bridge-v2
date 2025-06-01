@@ -15,6 +15,7 @@ type FriendRepository interface {
 	IsFriendExist(ctx context.Context, db *sql.DB, userID int, friendUserID int) (bool, error)
 	IsFriendAlreadyAccepted(ctx context.Context, db *sql.DB, userID int, friendUserID int) (bool, error)
 	GetFriendRequests(ctx context.Context, db *sql.DB, userID int) (*[]entity.Friend, error)
+	GetFriendRecommendation(ctx context.Context, db *sql.DB, userID int) (*[]entity.FriendRecommendation, error)
 }
 
 type FriendRepositoryImpl struct {
@@ -228,4 +229,108 @@ func (r *FriendRepositoryImpl) GetFriendRequests(ctx context.Context, db *sql.DB
 	}
 
 	return &friendRequests, nil
+}
+
+func (r *FriendRepositoryImpl) GetFriendRecommendation(ctx context.Context, db *sql.DB, userID int) (*[]entity.FriendRecommendation, error) {
+	// step 1: hitung overall mood dari user
+	query := `
+	SELECT mood FROM (
+		SELECT mood,
+				COUNT(*) AS freq,
+				MAX(createdat) AS latest_post,
+				ROW_NUMBER() OVER (
+				ORDER BY COUNT(*) DESC, MAX(createdat) DESC
+				) AS rn
+		FROM posts
+		WHERE userid = $1
+		GROUP BY mood
+	) AS ranked
+	WHERE rn = 1;
+	`
+
+	row := db.QueryRowContext(ctx, query, userID)
+	if row == nil {
+		return nil, fmt.Errorf("no mood found for user with id %d", userID)
+	}
+
+	var overallMood string
+	if err := row.Scan(&overallMood); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no mood found for user with id %d", userID)
+		}
+		return nil, fmt.Errorf("failed to get overall mood for user with id %d: %v", userID, err)
+	}
+
+	// step 2: Klasifikasikan user ke dalam user dengan risiko mental yang buruk dan user dengan risiko mental yang baik
+	var negativeMoods = map[string]bool{
+  		"Depression": true,
+  		"Anxiety": true,
+  		"Suicidal": true,
+  		"Personality disorder": true,
+  		"Bipolar": true,
+  		"Stress": true,
+	}
+
+	isAtRisk := negativeMoods[overallMood]
+
+	// step 3: buat query buat ngambil rekomendasi teman berdasarkan overall mood user
+	var moodCondition string
+	if isAtRisk {
+		// Rekomendasikan user dengan mood positif (mood tidak negatif)
+		moodCondition = "NOT IN ('Depression', 'Anxiety', 'Suicidal', 'Personality disorder', 'Bipolar', 'Stress')"
+	} else {
+		// Rekomendasikan user dengan mood negatif
+		moodCondition = "IN ('Depression', 'Anxiety', 'Suicidal', 'Personality disorder', 'Bipolar', 'Stress')"
+	}
+
+	recommendationQuery := fmt.Sprintf(`
+		SELECT u.userid, u.username, u.fullname, u.email, ranked.mood
+		FROM (
+			SELECT userid, mood,
+				ROW_NUMBER() OVER (
+					PARTITION BY userid
+					ORDER BY COUNT(*) DESC, MAX(createdat) DESC
+				) AS rn
+			FROM posts
+			GROUP BY userid, mood
+		) AS ranked
+		JOIN users u ON u.userid = ranked.userid
+		WHERE rn = 1
+		AND mood %s
+		AND u.userid != $1
+		AND u.userid NOT IN (
+				SELECT frienduserid FROM friends WHERE userid = $1 AND friendstatus = TRUE
+				UNION
+				SELECT userid FROM friends WHERE frienduserid = $1 AND friendstatus = TRUE
+		)
+		LIMIT 10;
+	`, moodCondition)
+
+
+	// step 4: jalankan query-nya
+	rows, err := db.QueryContext(ctx, recommendationQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get friend recommendations: %v", err)
+	}
+	defer rows.Close()
+
+	var recommendations []entity.FriendRecommendation
+	for rows.Next() {
+		var user entity.User
+		var mood string
+		if err := rows.Scan(&user.ID, &user.Username, &user.Fullname, &user.Email, &mood); err != nil {
+			return nil, fmt.Errorf("failed to scan recommendation row: %v", err)
+		}
+		recommendations = append(recommendations, entity.FriendRecommendation{
+			User:        user,
+			OverallMood: mood,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over recommendations: %v", err)
+	}
+
+	// step 5: return hasilnya
+	return &recommendations, nil
 }

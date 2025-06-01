@@ -3,6 +3,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useRef, useState } from "react";
 import CreatePost from "~/components/create-post";
+import FriendRecommendation from "~/components/friend-recommendation";
 import News from "~/components/news";
 import Post from "~/components/post";
 import type { PostInterface, PostResponse, User } from "~/types/types";
@@ -213,6 +214,14 @@ export default function HomePage() {
 
       <aside className="overflow-y-auto border-l p-4 backdrop-blur-md">
         <News />
+        {isLoggedIn && (
+          <div className="mx-auto mt-8 max-w-md">
+            <FriendRecommendation
+              _userID={user.id.toString()}
+              _token={Cookies.get("token")}
+            />
+          </div>
+        )}
       </aside>
     </main>
   );

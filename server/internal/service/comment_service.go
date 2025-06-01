@@ -214,7 +214,7 @@ func (s *CommentServiceImpl) GetAllByPostID(ctx context.Context, postID int) ([]
 
 	// step 6: validasi kalau gaada komentar
 	if len(commentResps) == 0 {
-		return nil, fmt.Errorf("comments for post with ID %d not found", postID)
+		return []*response.CreateCommentResponse{}, nil
 	}
 
 	// step 7: Ubah ke dalam JSON untuk disimpan ke dalam cache
