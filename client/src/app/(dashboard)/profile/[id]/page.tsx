@@ -10,6 +10,7 @@ import {
   type User,
   type FriendInterface,
   type FriendResponse,
+  type LoginResponse,
 } from "~/types/types";
 import profile_1 from "~/assets/profile/profile-picture-1.png";
 import profile_2 from "~/assets/profile/profile-picture-2.png";
@@ -57,9 +58,77 @@ export default function Page() {
     }));
   }
 
+  const reLogin = async (loggedInUsername: string, loggedInPassword: string) => { // buat update JWT Token setelah update
+    try {
+      const response = await axios.post<LoginResponse>(
+        `http://localhost:8080/api/user/login`, {
+          username: loggedInUsername,
+          password: loggedInPassword,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      if (response.status === 200) {
+        const token = response.data.data;
+        Cookies.set("token", token, { expires: 7 });
+        location.reload(); // Reload the page to reflect changes
+      }
+    } catch (error) {
+      // TODO: Handle error using toast
+      console.error("Error re-logging in:", error);
+    }
+  }
+
   const handleSaveChanges = async () => {
-    // TODO: Implement Backend API call
-    setIsEditing(false);
+    if (!editUser.username || !editUser.fullname || !editUser.email || !editUser.password) {
+      alert("Please fill in all fields."); // TODO: GANTI SAMA TOAST
+      setIsEditing(false);
+    }
+    try {
+      const response = await axios.put<RegisterResponse>(
+        `http://localhost:8080/api/user/update/${loggedInUser.id}`,
+        {
+          username: editUser.username,
+          fullname: editUser.fullname,
+          email: editUser.email,
+          password: editUser.password,
+          profile: "",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Cookies.get("token")}`,
+          },
+        }
+      )
+      if (response.status === 200) {
+        const data = response.data.data;
+        setLoggedInUser({
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          fullname: data.fullname,
+          createdAt: data.createdAt,
+        });
+        setEditUser({
+          username: data.username,
+          fullname: data.fullname,
+          email: data.email,
+          password: "",
+        });
+        // Update user token as well:
+        await reLogin(editUser.username, editUser.password);
+        location.reload();
+      }
+    } catch (error) {
+      // TODO: Handle error using toast
+      console.error("Error updating user:", error);
+    } finally {
+      setIsEditing(false);
+    }
   }
 
   const handleCancel = () => {
@@ -84,6 +153,12 @@ export default function Page() {
           fullname: user.user.fullname,
           createdAt: user.user.created_at,
         });
+        setEditUser({
+          username: user.user.username,
+          fullname: user.user.fullname,
+          email: user.user.email,
+          password: "",
+        })
         setIsLoggedIn(true);
       }
     }
@@ -210,18 +285,21 @@ export default function Page() {
           {/* Bagian Profile Atas */}
           <div className="relative flex flex-row justify-between rounded-xl bg-gradient-to-tr from-white to-blue-300 p-10 shadow-md">
             {/* Tombol Edit */}
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              type="button"
-              aria-label="Edit Profile"
-              className="absolute right-4 top-4"
-            >
-              {isEditing ? (
-                <TbPencilCancel className="w-8 h-8"/>
-              ) : (
-                <TbPencil className="w-8 h-8"/>
-              )}
-            </button>
+            {loggedInUser.id === user.id && (
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                disabled={!isLoggedIn}
+                type="button"
+                aria-label="Edit Profile"
+                className="absolute right-4 top-4"
+              >
+                {isEditing ? (
+                  <TbPencilCancel className="w-8 h-8" />
+                ) : (
+                  <TbPencil className="w-8 h-8" />
+                )}
+              </button>
+            )}
             <div className="flex flex-row items-start gap-10">
               <Image
                 src={getProfilePicture(user.id.toString())!.src}
