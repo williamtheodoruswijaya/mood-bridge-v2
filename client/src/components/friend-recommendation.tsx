@@ -33,7 +33,7 @@ const FriendRecommendation = ({
     Suicidal: "#FF0000",
     Stress: "#FF00A0",
     Bipolar: "#8B00FF",
-    "Personality Disorder": "#000000",
+    "Personality disorder": "#000000",
   };
   const profilePictures = [
     profile_1,
