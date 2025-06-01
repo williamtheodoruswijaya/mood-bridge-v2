@@ -106,7 +106,7 @@ const FriendRecommendation = ({
             <button
               onClick={() => router.push(`/user/${recommendation.userid}`)}
               key={recommendation.userid}
-              className="flex items-center gap-4 rounded-lg p-2 transition hover:bg-[#f3feff]"
+              className="flex w-full items-center gap-4 rounded-lg p-2 text-left transition hover:bg-[#f3faff]"
             >
               <Image
                 src={getProfilePicture(recommendation.userid.toString())!.src}
@@ -115,8 +115,8 @@ const FriendRecommendation = ({
                 height={64}
                 className="flex-shrink-0 rounded-full object-cover"
               />
-              <div className="flex w-full flex-col items-center justify-between">
-                <div className="flex w-full items-start justify-between">
+              <div className="grid w-full grid-rows-[auto_auto]">
+                <div className="flex w-full items-center justify-between">
                   <h2 className="truncate text-sm font-semibold text-gray-800">
                     {recommendation.fullname}
                   </h2>
@@ -130,7 +130,7 @@ const FriendRecommendation = ({
                     {recommendation.overall_mood}
                   </div>
                 </div>
-                <p className="text-xs text-gray-600">
+                <p className="truncate text-xs text-gray-600">
                   @{recommendation.username}
                 </p>
               </div>
