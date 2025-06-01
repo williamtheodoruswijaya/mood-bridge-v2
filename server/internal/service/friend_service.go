@@ -248,7 +248,7 @@ func (s *FriendServiceImpl) GetFriends(ctx context.Context, userID int) ([]*resp
 
 	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
 	if len(friendResponses) == 0 {
-		return []*response.FriendResponse{}, fmt.Errorf("no friends found")
+		return []*response.FriendResponse{}, nil
 	}
 
 	// step 6: ubah ke dalam json untuk disimpan ke cache
@@ -337,7 +337,7 @@ func (s *FriendServiceImpl) GetFriendRequests(ctx context.Context, userID int) (
 
 	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
 	if len(friendRequestResponses) == 0 {
-		return []*response.FriendResponse{}, fmt.Errorf("no friend requests found")
+		return []*response.FriendResponse{}, nil
 	}
 
 	// step 6: ubah ke dalam json untuk disimpan ke cache
@@ -384,7 +384,7 @@ func (s *FriendServiceImpl) GetFriendRecommendation(ctx context.Context, userID 
 
 	// step 5: validasi kalau gaada yang ketemu (kosong misalnya)
 	if len(friendRecommendationResponses) == 0 {
-		return []*response.FriendRecommendationResponse{}, fmt.Errorf("no friend recommendations found")
+		return []*response.FriendRecommendationResponse{}, nil
 	}
 
 	// step 6: ubah ke dalam json untuk disimpan ke cache

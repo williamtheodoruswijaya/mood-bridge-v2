@@ -234,7 +234,7 @@ func (s *PostServiceImpl) FindAll(ctx context.Context, limit, offset int) ([]*re
 
 	// Check if any posts were found
 	if len(postResponses) == 0 {
-		return nil, fmt.Errorf("no posts found")
+		return []*response.CreatePostResponse{}, nil
 	}
 
 	// Simpan response ke dalam cache
@@ -292,7 +292,7 @@ func (s *PostServiceImpl) FindByUserID(ctx context.Context, userID int) ([]*resp
 
 	// Check if any posts were found
 	if len(postResponses) == 0 {
-		return nil, fmt.Errorf("no posts found for user with ID %d", userID)
+		return []*response.CreatePostResponse{}, nil
 	}
 
 	return postResponses, nil
@@ -489,7 +489,7 @@ func (s *PostServiceImpl) GetFriendPosts(ctx context.Context, userID, limit, off
 	}
 
 	if len(postResponses) == 0 {
-		return nil, fmt.Errorf("no friend posts found for user with ID %d", userID)
+		return []*response.CreatePostResponse{}, nil
 	}
 
 	// Step 6: Cache the response
