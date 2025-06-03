@@ -8,66 +8,48 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build Docker Image
-        run: docker build -t admantix/mood-bridge-v2-backend . # Menggunakan tag :latest secara implisit
+        run: docker build -t admantix/mood-bridge-v2-backend:latest .
 
       - name: Push Image to Docker Hub
         run: docker push admantix/mood-bridge-v2-backend:latest
 
   deploy:
     needs: build
-    runs-on: self-hosted # Pastikan self-hosted runner Anda sudah terkonfigurasi dengan benar
+    runs-on: self-hosted
+
     steps:
-      - name: Pull Docker Image
+      - name: Pull Latest Image
         run: docker pull admantix/mood-bridge-v2-backend:latest
 
       - name: Remove Old Container
-        # Menghentikan dan menghapus kontainer dengan nama go-app-container jika ada
-        # "|| true" agar workflow tidak gagal jika kontainer belum ada
-        run: docker stop go-app-container || true && docker rm go-app-container || true
+        run: |
+          docker stop go-app-container || true
+          docker rm go-app-container || true
 
-      - name: Run Docker Container
+      - name: Run New Container
         run: |
           docker run -d \
             --name go-app-container \
             -p 8080:8080 \
-            # -----------------------------------------------------------------------------------
-            # PERHATIAN: Verifikasi dan Sesuaikan Nama Variabel Environment di Bawah Ini!
-            # Nama variabel di sisi kiri tanda '=' (misalnya, REDIS_URL, DBNAME) 
-            # HARUS SAMA PERSIS dengan nama variabel yang dibaca oleh aplikasi Go Anda.
-            # Nilai variabel diambil dari secrets GitHub Actions Anda.
-            # -----------------------------------------------------------------------------------
-
-            # Contoh: Jika aplikasi Go Anda mengharapkan REDIS_ADDR, bukan REDIS_URL,
-            # maka ubah baris "-e REDIS_URL=..." menjadi "-e REDIS_ADDR=..."
-            -e REDIS_URL=${{ secrets.REDIS_URL }}                 # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-
-            # PERIKSA: Apakah aplikasi Go Anda menggunakan env var PORT untuk menentukan port internal?
-            # Jika ya, pastikan secrets.PORT diset (misal: 8080). Jika tidak (aplikasi hardcoded ke 8080),
-            # baris ini mungkin tidak esensial karena -p 8080:8080 sudah menangani mapping.
-            -e PORT=${{ secrets.PORT }}                           # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu (atau hapus jika tidak dipakai app)
-
-            # Variabel untuk koneksi Database
-            -e DBNAME=${{ secrets.DBNAME }}                       # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-            -e HOST=${{ secrets.HOST }}                           # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu (untuk DB_HOST)
-            -e USER=${{ secrets.USER }}                           # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu (untuk DB_USER)
-            -e PASSWORD=${{ secrets.PASSWORD }}                   # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu (untuk DB_PASSWORD)
-
-            # Variabel untuk JWT
-            -e JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }} # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-            -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}       # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-
-            # Variabel untuk URL Microservice lain (jika ada)
-            -e MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }}         # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-            -e MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }} # <-- PERIKSA & SESUAIKAN NAMA ini jika perlu
-
-            # Pastikan semua nama variabel di atas sudah benar sesuai yang diharapkan kode Go Anda.
-            # Image yang dijalankan:
+            -e PORT=${{ secrets.PORT }} \
+            -e DBNAME=${{ secrets.DBNAME }} \
+            -e HOST=${{ secrets.HOST }} \
+            -e USER=${{ secrets.USER }} \
+            -e PASSWORD=${{ secrets.PASSWORD }} \
+            -e JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }} \
+            -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
+            -e MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }} \
+            -e MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }} \
+            -e REDIS_ADDR=${{ secrets.REDIS_ADDR }} \
+            -e REDIS_USERNAME=${{ secrets.REDIS_USERNAME }} \
+            -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
             admantix/mood-bridge-v2-backend:latest
