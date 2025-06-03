@@ -77,7 +77,7 @@ func ValidateToken(c *gin.Context, token string) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		jwtSecret := []byte(os.Getenv("jwt_secret_key"))
+		jwtSecret := []byte(os.Getenv("JWT_SECRET_KEY"))
 		return jwtSecret, nil
 	})
 
