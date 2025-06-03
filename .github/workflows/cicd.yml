@@ -28,14 +28,14 @@ jobs:
       - name: Pull Docker Image
         run: docker pull admantix/mood-bridge-v2-backend:latest
 
-      - name: Stop and Remove Existing Container (if exists)
-        run: |
-          docker rm -f go-app-container || true
+      - name: Remove Old Container
+        run: docker rm -f go-app-container || true
 
-      - name: Run New Docker Container
+      - name: Run Docker Container
         run: |
-          docker run -d -p 8080:8080 \
+          docker run -d \
             --name go-app-container \
+            -p 8080:8080 \
             -e PORT=${{ secrets.PORT }} \
             -e DBNAME=${{ secrets.DBNAME }} \
             -e HOST=${{ secrets.HOST }} \
