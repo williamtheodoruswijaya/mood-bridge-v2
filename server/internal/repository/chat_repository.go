@@ -108,7 +108,7 @@ func (r *ChatRepositoryImpl) UpdateMessageStatus(ctx context.Context, messageID 
 func (r *ChatRepositoryImpl) GetUnreadMessagesForUser(ctx context.Context, userID int, afterTimestamp time.Time) ([]*entity.Message, error) {
 	// step 1: define query untuk mengambil pesan yang statusnya bukan read dan setelah timestamp tertentu
 	query := `
-	SELECT id, senderid, recipientid, content, timestamp, status
+	SELECT messageid, senderid, recipientid, content, timestamp, status
 	FROM messages
 	WHERE (recipientid = $1 AND status != $2) AND timestamp > $3
 	ORDER BY timestamp ASC
