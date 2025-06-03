@@ -3,7 +3,7 @@ name: Deploy Mood Bridge v2 Backend
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
