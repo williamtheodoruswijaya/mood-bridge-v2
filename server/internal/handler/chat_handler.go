@@ -27,7 +27,7 @@ func NewChatHandler(chatService service.ChatService) ChatHandler {
 			CheckOrigin: func(r *http.Request) bool {
 				origin := r.Header.Get("Origin")
 				log.Printf("Handler: WebSocket connection request from origin: %s", origin)
-				return true // TODO: ganti dengan origin yang sesuai (link vercel)
+				return true // Allow all origins for simplicity, adjust as needed
 			},
 		},
 	}
