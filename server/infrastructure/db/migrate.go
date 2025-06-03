@@ -26,11 +26,11 @@ func Migrate(db *sql.DB, direction string) {
 	
 	// Ambil konfigurasi dari environment variable
 	config := Config{
-		Host:     os.Getenv("host"),
-		Port:     os.Getenv("port"),
-		User:     os.Getenv("user"),
-		Password: os.Getenv("password"),
-		DBName:   os.Getenv("dbname"),
+		Host:     os.Getenv("HOST"),
+		Port:     os.Getenv("PORT"),
+		User:     os.Getenv("USER"),
+		Password: os.Getenv("PASSWORD"),
+		DBName:   os.Getenv("DBNAME"),
 	}
 
 	// Buat connection string-nya (ini template sih)
