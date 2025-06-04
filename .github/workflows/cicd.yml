@@ -35,21 +35,31 @@ jobs:
           docker stop go-app-container || true
           docker rm go-app-container || true
 
-      - name: Run New Container
+      - name: Create .env File in server/
+        run: |
+          mkdir -p server
+          cat <<EOF > server/.env
+PORT=${{ secrets.PORT }}
+DBNAME=${{ secrets.DBNAME }}
+HOST=${{ secrets.HOST }}
+USER=${{ secrets.USER }}
+PASSWORD=${{ secrets.PASSWORD }}
+JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }}
+JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }}
+MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }}
+REDIS_ADDR=${{ secrets.REDIS_ADDR }}
+REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
+REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+EOF
+
+      - name: Run New Container using .env
         run: |
           docker run -d \
             --name go-app-container \
+            --env-file server/.env \
             -p 8080:8080 \
-            -e PORT=${{ secrets.PORT }} \
-            -e DBNAME=${{ secrets.DBNAME }} \
-            -e HOST=${{ secrets.HOST }} \
-            -e USER=${{ secrets.USER }} \
-            -e PASSWORD=${{ secrets.PASSWORD }} \
-            -e JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }} \
-            -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
-            -e MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }} \
-            -e MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }} \
-            -e REDIS_ADDR=${{ secrets.REDIS_ADDR }} \
-            -e REDIS_USERNAME=${{ secrets.REDIS_USERNAME }} \
-            -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
             admantix/mood-bridge-v2-backend:latest
+
+      - name: Clean Up .env File
+        run: rm server/.env
