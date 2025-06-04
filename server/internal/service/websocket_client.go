@@ -12,6 +12,7 @@ package service
 */
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"mood-bridge-v2/server/internal/model/request"
@@ -95,7 +96,7 @@ func (c *Client) ReadPump() {
 			}
 
 			// step 6: jika pesan valid, kirim pesan ke ChatService untuk diproses
-			err := c.ChatService.HandleIncomingMessage(nil, c.UserID, msgPayload.RecipientID, msgPayload.Content)
+			err := c.ChatService.HandleIncomingMessage(context.Background(), c.UserID, msgPayload.RecipientID, msgPayload.Content)
 			if err != nil {
 				log.Printf("Error from ChatService.HandleIncomingMessage for client %d: %v", c.UserID, err)
 				errMsgPayload := response.WebSocketMessage{

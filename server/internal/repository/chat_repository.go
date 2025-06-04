@@ -27,10 +27,10 @@ func NewChatRepository(db *sql.DB) ChatRepository {
 
 func (r *ChatRepositoryImpl) SaveMessage(ctx context.Context, msg *entity.Message) error {
 	// step 1: define query buat masukin pesan yang ada ke dalam database
-	query := `INSERT INTO messages (senderid, recipientid, content, timestamp, status) VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO messages (senderid, recipientid, content, timestamp, status) VALUES ($1, $2, $3, $4, $5) RETURNING messageid`
 
 	// step 2: jalankan query-nya (ExecContext) digunakan untuk eksekusi query yang tidak mengembalikan baris (INSERT, UPDATE, DELETE) (Berbeda dengan QueryRowContext yang digunakan untuk query yang mengembalikan satu baris dan QueryContext yang digunakan untuk query yang mengembalikan banyak baris)
-	_, err := r.DB.ExecContext(ctx, query, msg.SenderID, msg.RecipientID, msg.Content, msg.Timestamp, msg.Status)
+	err := r.DB.QueryRowContext(ctx, query, msg.SenderID, msg.RecipientID, msg.Content, msg.Timestamp, msg.Status).Scan(&msg.ID)
 	if err != nil {
 		return fmt.Errorf("error saving message: %w", err)
 	}
@@ -42,7 +42,7 @@ func (r *ChatRepositoryImpl) SaveMessage(ctx context.Context, msg *entity.Messag
 func (r *ChatRepositoryImpl) GetMessagesForConversation(ctx context.Context, senderID, recipientID, limit, offset int) ([]*entity.Message, error) {
 	// step 1: define query untuk mengambil pesan dari database baik yang sudah di read maupun yang belum di read
 	query := `
-	SELECT id, senderid, recipientid, content, timestamp, status
+	SELECT messageid, senderid, recipientid, content, timestamp, status
 	FROM messages
 	WHERE (senderid = $1 AND recipientid = $2) OR (senderid = $2 AND recipientid = $1)
 	ORDER BY timestamp ASC
@@ -82,7 +82,7 @@ func (r *ChatRepositoryImpl) GetMessagesForConversation(ctx context.Context, sen
 
 func (r *ChatRepositoryImpl) UpdateMessageStatus(ctx context.Context, messageID int, newStatus entity.MessageStatus) error {
 	// step 1: define query untuk update status pesan
-	query := `UPDATE messages SET status = $1 WHERE id = $2`
+	query := `UPDATE messages SET status = $1 WHERE messageid = $2`
 
 	// step 2: jalankan query-nya (ExecContext) digunakan untuk eksekusi query yang tidak mengembalikan baris (UPDATE)
 	result, err := r.DB.ExecContext(ctx, query, newStatus, messageID)
