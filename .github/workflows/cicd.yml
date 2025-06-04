@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -39,20 +39,18 @@ jobs:
       - name: Create .env File in server/
         run: |
           mkdir -p server
-          cat <<EOF > server/.env
-PORT=${{ secrets.PORT }}
-DBNAME=${{ secrets.DBNAME }}
-HOST=${{ secrets.HOST }}
-USER=${{ secrets.USER }}
-PASSWORD=${{ secrets.PASSWORD }}
-JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }}
-JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
-MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }}
-MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }}
-REDIS_ADDR=${{ secrets.REDIS_ADDR }}
-REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
-REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-EOF
+          echo "PORT=${{ secrets.PORT }}" > server/.env
+          echo "DBNAME=${{ secrets.DBNAME }}" >> server/.env
+          echo "HOST=${{ secrets.HOST }}" >> server/.env
+          echo "USER=${{ secrets.USER }}" >> server/.env
+          echo "PASSWORD=${{ secrets.PASSWORD }}" >> server/.env
+          echo "JWT_EXPIRATION_TIME=${{ secrets.JWT_EXPIRATION_TIME }}" >> server/.env
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> server/.env
+          echo "MIC_PREDICT_URL=${{ secrets.MIC_PREDICT_URL }}" >> server/.env
+          echo "MIC_PREDICT_MANY_URL=${{ secrets.MIC_PREDICT_MANY_URL }}" >> server/.env
+          echo "REDIS_ADDR=${{ secrets.REDIS_ADDR }}" >> server/.env
+          echo "REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}" >> server/.env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> server/.env
 
       - name: Run New Container using .env
         run: |
