@@ -123,7 +123,6 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	chat := api.Group("/chat")
 	{
-		chat.Use(middleware.Authenticate()) // gaboleh dituker
 		chat.GET("/ws", h.ChatHandler.HandleWebSocketConnection)
 		chat.GET("/history", h.ChatHandler.HandleFetchChatHistory)
 		chat.POST("/messages/:message_id/read", h.ChatHandler.HandleMarkMessageAsRead)

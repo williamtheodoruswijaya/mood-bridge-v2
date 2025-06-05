@@ -37,24 +37,24 @@ func NewChatHandler(chatService service.ChatService) ChatHandler {
 }
 
 func (h *ChatHandlerImpl) HandleWebSocketConnection(c *gin.Context) {
-	// step 1: ambil userID dari auth middleware
-	userIDInterface := c.Request.Context().Value("userID")
-	if userIDInterface == nil {
-		log.Println("Handler: User ID not found in context")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "Internal Server Error",
+	// step 1: ambil userID dari query
+	userIDStr := c.Query("id")
+	if userIDStr == "" {
+		log.Println("Handler: User ID not provided in query")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "User ID is required",
 		})
 		return
 	}
 
 	// step 2: ubah ke int
-	userID, ok := userIDInterface.(int)
-	if !ok {
-		log.Println("Handler: User ID is not an integer")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "Internal Server Error",
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil || userID <= 0 {
+		log.Printf("Handler: Invalid user ID: %s", userIDStr)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid user ID",
 		})
 		return
 	}
