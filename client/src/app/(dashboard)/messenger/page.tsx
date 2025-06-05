@@ -9,7 +9,7 @@ import {
   type FriendResponse,
   type User,
 } from "~/types/types";
-import { DecodeUserFromToken, TimeAgo } from "~/utils/utils";
+import { DecodeUserFromToken } from "~/utils/utils";
 
 export default function Page() {
   const token = Cookies.get("token");
@@ -51,6 +51,7 @@ export default function Page() {
 
   useEffect(() => {
     const fetchFriends = async () => {
+      if (!token || !user.id) return;
       if (token) {
         try {
           const response = await axios.get<FriendResponse>(
@@ -233,19 +234,14 @@ export default function Page() {
     }
   };
 
-  console.log("Current user:", user);
-  console.log("Friends list:", friends);
-
   return (
-    <main className="grid h-screen w-full grid-cols-[1fr_300px] bg-white text-black">
-      {/* Chat Box */}
-      <section className="flex flex-col justify-between bg-gradient-to-br from-blue-50 to-white p-4">
-        {/* ... (bagian chat box tidak berubah signifikan, kecuali tampilan pesan mungkin) ... */}
+    <main className="grid h-screen w-full grid-cols-[1fr_300px] text-black">
+      <section className="flex flex-col justify-between rounded-lg bg-gradient-to-br from-blue-50 to-white p-4">
         {currentChatFriend ? (
           <>
             <div className="mb-2 border-b pb-2">
-              <h3 className="text-xl font-semibold">
-                Chat with {currentChatFriend.user.username}{" "}
+              <h3 className="text-2xl font-semibold">
+                Chat with @{currentChatFriend.user.username}{" "}
               </h3>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto rounded border p-4 shadow-inner">
@@ -290,8 +286,8 @@ export default function Page() {
       </section>
 
       {/* Friends List - Tampilkan Unread Count */}
-      <aside className="overflow-y-auto border-l bg-sky-100 p-4">
-        <h2 className="mb-4 text-xl font-bold">Friends</h2>
+      <aside className="ml-4 overflow-y-auto rounded-lg bg-[#28b7be] p-4">
+        <h2 className="mb-4 text-2xl font-bold">Friends</h2>
         <ul className="space-y-2">
           {friends.map((friend) => (
             <li
