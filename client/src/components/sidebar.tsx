@@ -38,7 +38,7 @@ export default function Sidebar() {
   const items = [
     { title: "Dashboard", icon: MdDashboard, url: "/" },
     { title: "Explore", icon: FaCompass, url: "/explore" },
-    { title: "Messenger", icon: BsChatSquareDots, url: "/messenger" },
+    { title: "Messenger", icon: BsChatSquareDots, url: `/messenger` },
     { title: "Check your mood", icon: PiStarFourFill, url: "/check-mood" },
     ...(isLoggedIn
       ? [{ title: "Log out", icon: MdLogout, url: "/logout" }]

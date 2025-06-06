@@ -111,3 +111,17 @@ export interface FriendRecommendationInterface {
   email: string;
   overall_mood: string;
 }
+
+export interface MessageInterface {
+  type: "new_private_message" | "offline_message";
+  payload: ChatPayload;
+}
+
+export interface ChatPayload {
+  id: number;
+  senderid: number;
+  recipientid: number;
+  content: string;
+  timestamp: string;
+  status: string;
+}
