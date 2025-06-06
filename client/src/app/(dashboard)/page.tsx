@@ -212,7 +212,7 @@ export default function HomePage() {
         )}
       </section>
 
-      <aside className="overflow-y-auto border-l p-4 backdrop-blur-md">
+      <aside className="border-l p-4 backdrop-blur-md">
         <News />
         {isLoggedIn && (
           <div className="mx-auto mt-8 max-w-md">
