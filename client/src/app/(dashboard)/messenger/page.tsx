@@ -9,7 +9,13 @@ import {
   type FriendResponse,
   type User,
 } from "~/types/types";
+import profile_1 from "~/assets/profile/profile-picture-1.png";
+import profile_2 from "~/assets/profile/profile-picture-2.png";
+import profile_3 from "~/assets/profile/profile-picture-3.png";
+import profile_4 from "~/assets/profile/profile-picture-4.png";
+import profile_5 from "~/assets/profile/profile-picture-5.png";
 import { DecodeUserFromToken } from "~/utils/utils";
+import Image from "next/image";
 
 export default function Page() {
   const token = Cookies.get("token");
@@ -25,34 +31,46 @@ export default function Page() {
   const [currentChatFriend, setCurrentChatFriend] =
     useState<FriendInterface | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const ws = useRef<WebSocket | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const profilePictures = [
+    profile_1,
+    profile_2,
+    profile_3,
+    profile_4,
+    profile_5,
+  ];
+  const getProfilePicture = (userid: string) => {
+    const hash = Array.from(userid).reduce(
+      (acc, char) => acc + char.charCodeAt(0),
+      0,
+    );
+    const index = hash % profilePictures.length;
+    return profilePictures[index];
+  };
 
-  // Fetch user data and friends list
+  // step 1: Fetch user data yang sedang login
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (token) {
-        const user = DecodeUserFromToken(token);
-        if (user) {
-          setUser({
-            id: user.user.id,
-            username: user.user.username,
-            email: user.user.email,
-            fullname: user.user.fullname,
-            createdAt: user.user.created_at,
-          });
-        }
+    if (token) {
+      const decodedUser = DecodeUserFromToken(token);
+      if (decodedUser?.user && decodedUser) {
+        setUser({
+          id: decodedUser.user.id,
+          username: decodedUser.user.username,
+          email: decodedUser.user.email,
+          fullname: decodedUser.user.fullname,
+          createdAt: decodedUser.user.created_at,
+        });
       }
-    };
-
-    fetchUserData().catch((error) => {
-      console.error("Error fetching user data:", error);
-    });
+    }
   }, [token]);
 
+  // step 2: Fetch daftar teman milik user
   useEffect(() => {
     const fetchFriends = async () => {
       if (!token || !user.id) return;
-      if (token) {
+      if (token && user.id) {
         try {
           const response = await axios.get<FriendResponse>(
             `http://localhost:8080/api/friend/all/${user.id}`,
@@ -77,93 +95,70 @@ export default function Page() {
     });
   }, [token, user.id]);
 
-  // Establish WebSocket connection
+  // step 3: Nyalakan koneksi WebSocket
   useEffect(() => {
-    if (!token) return;
-
-    // step 1: pastiin cuman ada satu koneksi WebSocket yang terbentuk
-    if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
-      console.log("WebSocket already connected");
-    } else {
-      // step 2: buat koneksi WebSocket baru
+    if (!token || !user.id) return;
+    if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
       ws.current = new WebSocket(
         `ws://localhost:8080/api/chat/ws?id=${user.id}`,
       );
-
-      // step 3: make sure WebSocket sudah open
       ws.current.onopen = () => {
         console.log("WebSocket connection established");
-
-        // step 4: kirim authentication message
-        ws.current?.send(
-          JSON.stringify({
-            type: "Authorization",
-            token: token,
-          }),
-        );
       };
-
-      // step 5: handle incoming messages
-      ws.current.onmessage = (event: MessageEvent<string>) => {
-        try {
-          // step 6: parse incoming message as JSON
-          const receivedMsg = JSON.parse(event.data) as MessageInterface;
-          console.log("Received message:", receivedMsg);
-
-          // step 7: ambil pesan dari payload
-          if (
-            receivedMsg.type === "new_private_message" ||
-            receivedMsg.type === "offline_message"
-          ) {
-            const chatMessage = receivedMsg.payload;
-            if (
-              currentChatFriend &&
-              (chatMessage.senderid === currentChatFriend.userid ||
-                chatMessage.senderid === user.id)
-            ) {
-              const newMessage: MessageInterface = {
-                type: receivedMsg.type,
-                payload: {
-                  id: chatMessage.id,
-                  senderid: chatMessage.senderid,
-                  recipientid: chatMessage.recipientid,
-                  content: chatMessage.content,
-                  timestamp: chatMessage.timestamp,
-                  status: chatMessage.status,
-                },
-              };
-              setMessages((prevMessages) => [...prevMessages, newMessage]);
-            } else {
-              // Jika pesan bukan untuk chat saat ini, bisa simpan atau tampilkan notifikasi
-              // TODO: Handle message not for current chat by showing a notification or updating UI
-              console.log("Message not for current chat:", receivedMsg);
-            }
-          }
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-        }
-      };
-
-      // step 8: handle close event
       ws.current.onclose = (event) => {
-        console.log("WebSocket connection closed:", event);
-        ws.current = null; // Reset WebSocket reference
+        console.log("WebSocket connection closed", event.code, event.reason);
       };
-
-      // step 9: handle WebSocket errors
       ws.current.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
     }
 
-    // Cleanup function to close WebSocket connection on unmount
+    ws.current.onmessage = (event: MessageEvent<string>) => {
+      try {
+        // step 6: parse incoming message as JSON
+        const receivedMsg = JSON.parse(event.data) as MessageInterface;
+        console.log("Received message:", receivedMsg);
+
+        // step 7: ambil pesan dari payload
+        if (
+          receivedMsg.type === "new_private_message" ||
+          receivedMsg.type === "offline_message"
+        ) {
+          const chatMessage = receivedMsg.payload;
+          if (
+            currentChatFriend &&
+            (chatMessage.senderid === currentChatFriend.userid ||
+              chatMessage.senderid === user.id)
+          ) {
+            const newMessage: MessageInterface = {
+              type: receivedMsg.type,
+              payload: {
+                id: chatMessage.id,
+                senderid: chatMessage.senderid,
+                recipientid: chatMessage.recipientid,
+                content: chatMessage.content,
+                timestamp: chatMessage.timestamp,
+                status: chatMessage.status,
+              },
+            };
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
+          } else {
+            // Jika pesan bukan untuk chat saat ini, bisa simpan atau tampilkan notifikasi
+            // TODO: Handle message not for current chat by showing a notification or updating UI
+            console.log("Message not for current chat:", receivedMsg);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
     return () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         ws.current.close();
         console.log("WebSocket connection closed on unmount");
       }
     };
-  }, [token, currentChatFriend, user.id]);
+  }, [token, user.id, currentChatFriend]);
 
   // Fetch history messages when a friend is selected
   const fetchHistoryMessages = async (friend: FriendInterface) => {
@@ -235,11 +230,11 @@ export default function Page() {
   };
 
   return (
-    <main className="grid h-screen w-full grid-cols-[1fr_300px] text-black">
-      <section className="flex flex-col justify-between rounded-lg bg-gradient-to-br from-blue-50 to-white p-4">
+    <main className="grid h-full w-full grid-cols-[1fr_300px] text-black">
+      <section className="flex flex-col justify-between rounded-lg bg-gradient-to-tl from-white to-cyan-100 p-4">
         {currentChatFriend ? (
           <>
-            <div className="mb-2 border-b pb-2">
+            <div className="mb-2 pb-2">
               <h3 className="text-2xl font-semibold">
                 Chat with @{currentChatFriend.user.username}{" "}
               </h3>
@@ -287,23 +282,28 @@ export default function Page() {
 
       {/* Friends List - Tampilkan Unread Count */}
       <aside className="ml-4 overflow-y-auto rounded-lg bg-[#28b7be] p-4">
-        <h2 className="mb-4 text-2xl font-bold">Friends</h2>
+        <h2 className="mb-4 text-2xl font-bold text-white">Friends</h2>
         <ul className="space-y-2">
           {friends.map((friend) => (
-            <li
+            <button
               key={friend.id}
-              className={`flex cursor-pointer items-center justify-between rounded bg-white p-2 shadow hover:bg-sky-200 ${
+              className={`flex w-full cursor-pointer items-center rounded bg-white p-2 shadow hover:bg-sky-200 ${
                 currentChatFriend?.id === friend.id ? "bg-sky-300" : ""
               }`}
               onClick={() => fetchHistoryMessages(friend)}
             >
-              <span>{friend.user.username}</span>
-              {/* {unreadMessage > 0 && (
-                <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
-                  {friend.unreadCount}
-                </span>
-              )} */}
-            </li>
+              <Image
+                src={getProfilePicture(friend.user.userid.toString())!.src}
+                width={40}
+                height={40}
+                alt="Profile-Picture"
+                className="mr-2 rounded-full object-cover"
+              />
+              <div className="text-sm font-medium">{friend.user.fullname}</div>
+              <div className="ml-1 text-xs font-extralight">
+                @{friend.user.username}
+              </div>
+            </button>
           ))}
         </ul>
       </aside>
