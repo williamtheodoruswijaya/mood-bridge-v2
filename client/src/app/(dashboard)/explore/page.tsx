@@ -113,7 +113,7 @@ export default function HomePage() {
         const response = await axios.get<PostResponse>(apiUrl);
         if (response.status === 200) {
           const newPosts = response.data.data;
-          setPosts((prev) => [...prev, ...newPosts]);
+          setPosts((prev) => mergePostsUnique(prev, newPosts));
           if (newPosts.length < limit || newPosts.length === 0) {
             setHasMore(false);
           }
