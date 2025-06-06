@@ -19,6 +19,7 @@ type Handlers struct {
 	CommentHandler handler.CommentHandler
 	FriendHandler handler.FriendHandler
 	ChatHandler    handler.ChatHandler
+    AIHandler *handler.AIChatHandler
 }
 
 // step 2: buat method untuk setiap route yang ada dalam api kita. misal kita mau bikin route untuk create user, kita bisa bikin method CreateUser
@@ -51,6 +52,9 @@ func initHandler(db *sql.DB, redisClient *redis.Client) Handlers {
 	websocketHub := service.NewConcreteHub(chatRepository)
 	chatService := service.NewChatService(chatRepository, websocketHub)
 	chatHandler := handler.NewChatHandler(chatService)
+	
+    aiService := service.NewDialoGPTService()
+    aiHandler := handler.NewAIChatHandler(aiService)
 
 	return Handlers{
 		UserHandler:    userHandler,
@@ -58,6 +62,7 @@ func initHandler(db *sql.DB, redisClient *redis.Client) Handlers {
 		CommentHandler: commentHandler,
 		FriendHandler: friendHandler,
 		ChatHandler:    chatHandler,
+		AIHandler:      aiHandler,
 	}
 }
 
@@ -72,6 +77,7 @@ func initRoutes(h Handlers) *gin.Engine {
 
 	// Lakukan grouping
 	api := router.Group("/api")
+	
 
 	// Buat routes untuk user
 	user := api.Group("/user")
@@ -127,6 +133,12 @@ func initRoutes(h Handlers) *gin.Engine {
 		chat.GET("/history", h.ChatHandler.HandleFetchChatHistory)
 		chat.POST("/messages/:message_id/read", h.ChatHandler.HandleMarkMessageAsRead)
 	}
+
+	ai := api.Group("/ai")
+	{
+		ai.POST("/chat", h.AIHandler.HandleChat)
+	}
+
 
 	return router
 }
