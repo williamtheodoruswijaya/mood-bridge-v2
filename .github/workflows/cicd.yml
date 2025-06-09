@@ -9,34 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Build Docker Image
-        run: docker build -t admantix/mood-bridge-v2-backend:latest .
-
-      - name: Push Image to Docker Hub
-        run: docker push admantix/mood-bridge-v2-backend:latest
-
-  deploy:
-    needs: build
-    runs-on: self-hosted
-
-    steps:
-      - name: Pull Latest Image
-        run: docker pull admantix/mood-bridge-v2-backend:latest
-
-      - name: Remove Old Container
-        run: |
-          docker stop go-app-container || true
-          docker rm go-app-container || true
-
-      - name: Create .env File in server/
+      - name: Create .env file for build
         run: |
           mkdir -p server
           echo "PORT=${{ secrets.PORT }}" > server/.env
@@ -51,14 +28,33 @@ jobs:
           echo "REDIS_ADDR=${{ secrets.REDIS_ADDR }}" >> server/.env
           echo "REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}" >> server/.env
           echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> server/.env
+          echo "HUGGINGFACE_API_TOKEN=${{ secrets.HUGGINGFACE_API_TOKEN }}" >> server/.env
 
-      - name: Run New Container using .env
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: admantix/mood-bridge-v2-backend:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull Latest Image from Docker Hub
+        run: docker pull admantix/mood-bridge-v2-backend:latest
+
+      - name: Stop and Run New Container
         run: |
+          docker rm -f go-app-container || true
           docker run -d \
             --name go-app-container \
-            --env-file server/.env \
+            --restart always \
             -p 8080:8080 \
             admantix/mood-bridge-v2-backend:latest
-
-      - name: Clean Up .env File
-        run: rm server/.env

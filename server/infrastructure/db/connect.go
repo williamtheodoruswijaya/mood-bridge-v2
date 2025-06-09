@@ -39,7 +39,7 @@ func NewDbConnection() *sql.DB {
 
 	// Buat connection string-nya (ini template sih)
 	psqlInfo := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require",
 		config.Host, config.Port, config.User, config.Password, config.DBName,
 	)
 
