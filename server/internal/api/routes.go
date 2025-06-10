@@ -78,6 +78,14 @@ func initRoutes(h Handlers) *gin.Engine {
 	// Lakukan grouping
 	api := router.Group("/api")
 	
+	// Buat health check
+	api.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"code":	200,
+			"status":  "ok",
+			"message": "API is running",
+		})
+	})
 
 	// Buat routes untuk user
 	user := api.Group("/user")
