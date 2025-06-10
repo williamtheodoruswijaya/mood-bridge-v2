@@ -16,7 +16,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       const response = await axios.post<LoginResponse>(
-        "http://localhost:8080/api/user/login",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
         {
           username: username,
           password: password,

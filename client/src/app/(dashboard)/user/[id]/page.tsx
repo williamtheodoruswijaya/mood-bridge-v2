@@ -67,7 +67,7 @@ export default function Page() {
     const fetchUserData = async (userID: string) => {
       try {
         const response = await axios.get<RegisterResponse>(
-          `http://localhost:8080/api/user/by-id/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user/by-id/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export default function Page() {
     const fetchUserPosts = async (userID: string) => {
       try {
         const response = await axios.get<PostResponse>(
-          `http://localhost:8080/api/post/by-userid/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/post/by-userid/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export default function Page() {
     const fetchUserFriends = async (userID: string) => {
       try {
         const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/all/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/friend/all/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export default function Page() {
     const fetchUserFriendRequests = async (userID: string) => {
       try {
         const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/requests/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/friend/requests/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -153,7 +153,7 @@ export default function Page() {
     const fetchMyFriendRequests = async (userID: string) => {
       try {
         const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/requests/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/friend/requests/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -230,7 +230,7 @@ export default function Page() {
 
     try {
       await axios.post<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/add`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/friend/add`,
         {
           userid: loggedInUser.id,
           frienduserid: user.id,
@@ -255,7 +255,7 @@ export default function Page() {
 
     try {
       await axios.post<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/accept`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/friend/accept`,
         {
           userid: loggedInUser.id,
           frienduserid: friendID, // ini orang yang mau di-accept
@@ -293,7 +293,7 @@ export default function Page() {
     // step 3: panggil API untuk menghapus friend
     try {
       await axios.delete<AddOrAcceptFriendResponse>(
-        `http://localhost:8080/api/friend/delete/${friendID}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/friend/delete/${friendID}`,
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("token")}`,

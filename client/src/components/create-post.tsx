@@ -97,7 +97,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     setLoading(true);
     try {
       const response = await axios.post<PostResponseDetail>(
-        "http://localhost:8080/api/post/create",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/post/create`,
         {
           userid: user.id,
           content: content,

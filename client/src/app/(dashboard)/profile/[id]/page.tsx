@@ -48,7 +48,7 @@ export default function Page() {
     fullname: loggedInUser.fullname,
     email: loggedInUser.email,
     password: "",
-  })
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,12 +56,17 @@ export default function Page() {
       ...prev,
       [name]: value,
     }));
-  }
+  };
 
-  const reLogin = async (loggedInUsername: string, loggedInPassword: string) => { // buat update JWT Token setelah update
+  const reLogin = async (
+    loggedInUsername: string,
+    loggedInPassword: string,
+  ) => {
+    // buat update JWT Token setelah update
     try {
       const response = await axios.post<LoginResponse>(
-        `http://localhost:8080/api/user/login`, {
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
+        {
           username: loggedInUsername,
           password: loggedInPassword,
         },
@@ -69,8 +74,8 @@ export default function Page() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
-      )
+        },
+      );
       if (response.status === 200) {
         const token = response.data.data;
         Cookies.set("token", token, { expires: 7 });
@@ -80,16 +85,21 @@ export default function Page() {
       // TODO: Handle error using toast
       console.error("Error re-logging in:", error);
     }
-  }
+  };
 
   const handleSaveChanges = async () => {
-    if (!editUser.username || !editUser.fullname || !editUser.email || !editUser.password) {
+    if (
+      !editUser.username ||
+      !editUser.fullname ||
+      !editUser.email ||
+      !editUser.password
+    ) {
       alert("Please fill in all fields."); // TODO: GANTI SAMA TOAST
       setIsEditing(false);
     }
     try {
       const response = await axios.put<RegisterResponse>(
-        `http://localhost:8080/api/user/update/${loggedInUser.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/update/${loggedInUser.id}`,
         {
           username: editUser.username,
           fullname: editUser.fullname,
@@ -102,8 +112,8 @@ export default function Page() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${Cookies.get("token")}`,
           },
-        }
-      )
+        },
+      );
       if (response.status === 200) {
         const data = response.data.data;
         setLoggedInUser({
@@ -129,7 +139,7 @@ export default function Page() {
     } finally {
       setIsEditing(false);
     }
-  }
+  };
 
   const handleCancel = () => {
     setEditUser({
@@ -158,7 +168,7 @@ export default function Page() {
           fullname: user.user.fullname,
           email: user.user.email,
           password: "",
-        })
+        });
         setIsLoggedIn(true);
       }
     }
@@ -168,7 +178,7 @@ export default function Page() {
     const fetchUserData = async (userID: string) => {
       try {
         const response = await axios.get<RegisterResponse>(
-          `http://localhost:8080/api/user/by-id/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user/by-id/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -194,7 +204,7 @@ export default function Page() {
     const fetchUserPosts = async (userID: string) => {
       try {
         const response = await axios.get<PostResponse>(
-          `http://localhost:8080/api/post/by-userid/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/post/by-userid/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -214,7 +224,7 @@ export default function Page() {
     const fetchUserFriends = async (userID: string) => {
       try {
         const response = await axios.get<FriendResponse>(
-          `http://localhost:8080/api/friend/all/${userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/friend/all/${userID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -291,12 +301,12 @@ export default function Page() {
                 disabled={!isLoggedIn}
                 type="button"
                 aria-label="Edit Profile"
-                className="absolute right-4 top-4"
+                className="absolute top-4 right-4"
               >
                 {isEditing ? (
-                  <TbPencilCancel className="w-8 h-8" />
+                  <TbPencilCancel className="h-8 w-8" />
                 ) : (
-                  <TbPencil className="w-8 h-8" />
+                  <TbPencil className="h-8 w-8" />
                 )}
               </button>
             )}
@@ -308,7 +318,7 @@ export default function Page() {
                 alt="profile-picture"
                 className="rounded-full object-cover shadow-lg"
               />
-              <div className=" flex flex-col justify-center">
+              <div className="flex flex-col justify-center">
                 {isEditing ? (
                   <>
                     <input
@@ -333,7 +343,7 @@ export default function Page() {
                       placeholder="Email"
                       value={editUser.email}
                       onChange={handleInputChange}
-                      className="mb-2 rounded bg-white px-2 py-1 text-md text-gray-500"
+                      className="text-md mb-2 rounded bg-white px-2 py-1 text-gray-500"
                     />
                     <input
                       type="password"
@@ -365,7 +375,7 @@ export default function Page() {
                     <p className="text-md text-gray-500">{user.email}</p>
                   </>
                 )}
-                
+
                 <div className="mt-4 flex gap-4">
                   <div className="w-32 rounded-lg bg-white p-2 text-center shadow-md">
                     <p className="text-xl font-semibold">{friends.length}</p>

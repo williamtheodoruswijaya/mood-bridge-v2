@@ -65,7 +65,7 @@ export default function Page() {
     setLoading(true);
     try {
       const response = await axios.post<CommentDetailResponse>(
-        "http://localhost:8080/api/comment/create",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/comment/create`,
         {
           postid: parseInt(postID as string, 10),
           userid: user.id,
@@ -112,7 +112,7 @@ export default function Page() {
     const fetchPost = async (postID: string) => {
       try {
         const response = await axios.get<PostResponseDetail>(
-          `http://localhost:8080/api/post/by-id/${postID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/post/by-id/${postID}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -131,7 +131,7 @@ export default function Page() {
     const fetchComments = async (postID: string) => {
       try {
         const response = await axios.get<CommentResponse>(
-          `http://localhost:8080/api/comment/by-postid/${postID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/comment/by-postid/${postID}`,
           {
             headers: {
               "Content-Type": "application/json",
