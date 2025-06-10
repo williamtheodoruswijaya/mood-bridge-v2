@@ -31,9 +31,9 @@ export default function Page() {
   const [currentChatFriend, setCurrentChatFriend] =
     useState<FriendInterface | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false); // eslint-disable-line
   const ws = useRef<WebSocket | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null); // eslint-disable-line
   const profilePictures = [
     profile_1,
     profile_2,

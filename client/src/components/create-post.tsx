@@ -16,6 +16,7 @@ interface CreatePostProps {
   onPostCreated?: (post: PostInterface) => void;
 }
 
+// eslint-disable-next-line
 export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const router = useRouter();
   const [content, setContent] = useState("");
