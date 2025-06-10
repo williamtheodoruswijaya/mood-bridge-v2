@@ -16,6 +16,7 @@ interface CreatePostProps {
   onPostCreated?: (post: PostInterface) => void;
 }
 
+// eslint-disable-next-line
 export default function CreatePost({ onPostCreated }: CreatePostProps) {
   const router = useRouter();
   const [content, setContent] = useState("");
@@ -97,7 +98,7 @@ export default function CreatePost({ onPostCreated }: CreatePostProps) {
     setLoading(true);
     try {
       const response = await axios.post<PostResponseDetail>(
-        "http://localhost:8080/api/post/create",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/post/create`,
         {
           userid: user.id,
           content: content,

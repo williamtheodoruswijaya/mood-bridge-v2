@@ -17,7 +17,7 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       const response = await axios.post<RegisterResponse>(
-        "http://localhost:8080/api/user/register",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/register`,
         {
           username: username,
           fullname: fullName,

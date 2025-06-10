@@ -31,9 +31,9 @@ export default function Page() {
   const [currentChatFriend, setCurrentChatFriend] =
     useState<FriendInterface | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false); // eslint-disable-line
   const ws = useRef<WebSocket | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null); // eslint-disable-line
   const profilePictures = [
     profile_1,
     profile_2,
@@ -73,7 +73,7 @@ export default function Page() {
       if (token && user.id) {
         try {
           const response = await axios.get<FriendResponse>(
-            `http://localhost:8080/api/friend/all/${user.id}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/friend/all/${user.id}`,
             {
               headers: {
                 "Content-Type": "application/json",
@@ -100,7 +100,7 @@ export default function Page() {
     if (!token || !user.id) return;
     if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
       ws.current = new WebSocket(
-        `ws://localhost:8080/api/chat/ws?id=${user.id}`,
+        `${process.env.NEXT_PUBLIC_WEB_SOCKET_URL}/api/chat/ws?id=${user.id}`,
       );
       ws.current.onopen = () => {
         console.log("WebSocket connection established");
@@ -174,7 +174,7 @@ export default function Page() {
     if (!token || !user.id) return;
     try {
       const response = await axios.get<MessageInterface[]>(
-        `ws://localhost:8080/api/chat/history?with_user_id=${friend.userid}&limit=50&offset=0`,
+        `${process.env.NEXT_PUBLIC_WEB_SOCKET_URL}/api/chat/history?with_user_id=${friend.userid}&limit=50&offset=0`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

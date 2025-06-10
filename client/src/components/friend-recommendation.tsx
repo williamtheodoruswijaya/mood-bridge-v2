@@ -69,7 +69,7 @@ const FriendRecommendation = ({
     const fetchFriendRecommendations = async () => {
       try {
         const response = await axios.get<FriendRecommendationResponse>(
-          `http://localhost:8080/api/friend/recommendation/${_userID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/friend/recommendation/${_userID}`,
           {
             headers: {
               Authorization: `Bearer ${_token}`,

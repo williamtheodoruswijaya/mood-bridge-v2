@@ -54,7 +54,7 @@ export default function Page() {
       }
       setLoading(true);
       const fetchAllPosts = async () => {
-        const apiUrl = `http://localhost:8080/api/post/all?limit=${limit}&offset=${offset}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/all?limit=${limit}&offset=${offset}`;
         try {
           const response = await axios.get<PostResponse>(apiUrl);
           if (response.status === 200) {
@@ -109,7 +109,7 @@ export default function Page() {
     const fetchMorePosts = async () => {
       setLoading(true);
       try {
-        const apiUrl = `http://localhost:8080/api/post/all?limit=${limit}&offset=${offset}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/all?limit=${limit}&offset=${offset}`;
         const response = await axios.get<PostResponse>(apiUrl);
         if (response.status === 200) {
           const newPosts = response.data.data;

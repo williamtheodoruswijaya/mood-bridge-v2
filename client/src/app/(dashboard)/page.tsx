@@ -55,7 +55,7 @@ export default function HomePage() {
       }
       setLoading(true);
       const fetchAllPosts = async () => {
-        const apiUrl = `http://localhost:8080/api/post/all?limit=${limit}&offset=${offset}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/all?limit=${limit}&offset=${offset}`;
         try {
           const response = await axios.get<PostResponse>(apiUrl);
           if (response.status === 200) {
@@ -80,7 +80,7 @@ export default function HomePage() {
         limit: number,
         offset: number,
       ) => {
-        const apiUrl = `http://localhost:8080/api/post/friend-posts/${userID}?limit=${limit}&offset=${offset}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/friend-posts/${userID}?limit=${limit}&offset=${offset}`;
         try {
           const response = await axios.get<PostResponse>(apiUrl, {
             headers: {
@@ -146,7 +146,7 @@ export default function HomePage() {
       setLoading(true);
       try {
         if (isLoggedIn && user.id > 0) {
-          const apiUrl = `http://localhost:8080/api/post/friend-posts/${user.id}?limit=${limit}&offset=${offset}`;
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/friend-posts/${user.id}?limit=${limit}&offset=${offset}`;
           const response = await axios.get<PostResponse>(apiUrl, {
             headers: {
               Authorization: `Bearer ${Cookies.get("token")}`,
@@ -161,7 +161,7 @@ export default function HomePage() {
             }
           }
         } else {
-          const apiUrl = `http://localhost:8080/api/post/all?limit=${limit}&offset=${offset}`;
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/post/all?limit=${limit}&offset=${offset}`;
           const response = await axios.get<PostResponse>(apiUrl);
           if (response.status === 200) {
             const newPosts = response.data.data;
