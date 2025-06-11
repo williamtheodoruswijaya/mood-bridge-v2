@@ -1,3 +1,6 @@
 [submodule "mental-illness-classification"]
 	path = mental-illness-classification
 	url = https://github.com/williamtheodoruswijaya/mental-illness-classification.git
+[submodule "xai-mental-illness-classification"]
+	path = xai-mental-illness-classification
+	url = https://github.com/williamtheodoruswijaya/xai-mental-illness-classification
