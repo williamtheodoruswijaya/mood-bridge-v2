@@ -11,6 +11,7 @@ import { PiStarFourFill } from "react-icons/pi";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
+import { SiStreamlit } from "react-icons/si";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -40,6 +41,11 @@ export default function Sidebar() {
     { title: "Explore", icon: FaCompass, url: "/explore" },
     { title: "Messenger", icon: BsChatSquareDots, url: `/messenger` },
     { title: "Check your mood", icon: PiStarFourFill, url: "/check-mood" },
+    {
+      title: "Streamlit",
+      icon: SiStreamlit,
+      url: "https://xai-app-noqx6a2dchqwb6nvp2apqd.streamlit.app/",
+    },
     ...(isLoggedIn
       ? [{ title: "Log out", icon: MdLogout, url: "/logout" }]
       : []),
@@ -56,26 +62,44 @@ export default function Sidebar() {
           {items.map((item) => {
             const isLogout = item.title === "Log out";
             const activeClass = isActive(item.url) ? "bg-[#00A6FF]" : "";
+            const isExternal = item.url.startsWith("http");
 
-            return isLogout ? (
-              <button
-                key={item.title}
-                onClick={handleLogout}
-                className={`flex items-center gap-5 rounded-md p-2 font-bold text-white transition-colors hover:bg-[#1a9ea0] ${activeClass}`}
-              >
-                <item.icon className="text-2xl" />
-                <span>{item.title}</span>
-              </button>
-            ) : (
-              <Link
-                key={item.title}
-                href={item.url}
-                className={`flex items-center gap-5 rounded-md p-2 font-bold text-white transition-colors hover:bg-[#1a9ea0] ${activeClass}`}
-              >
-                <item.icon className="text-2xl" />
-                <span>{item.title}</span>
-              </Link>
-            );
+            if (isLogout) {
+              return (
+                <button
+                  key={item.title}
+                  onClick={handleLogout}
+                  className={`flex items-center gap-5 rounded-md p-2 font-bold text-white transition-colors hover:bg-[#1a9ea0] ${activeClass}`}
+                >
+                  <item.icon className="text-2xl" />
+                  <span>{item.title}</span>
+                </button>
+              );
+            } else if (isExternal) {
+              return (
+                <a
+                  key={item.title}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center gap-5 rounded-md p-2 font-bold text-white transition-colors hover:bg-[#1a9ea0]`}
+                >
+                  <item.icon className="text-2xl" />
+                  <span>{item.title}</span>
+                </a>
+              );
+            } else {
+              return (
+                <Link
+                  key={item.title}
+                  href={item.url}
+                  className={`flex items-center gap-5 rounded-md p-2 font-bold text-white transition-colors hover:bg-[#1a9ea0] ${activeClass}`}
+                >
+                  <item.icon className="text-2xl" />
+                  <span>{item.title}</span>
+                </Link>
+              );
+            }
           })}
         </nav>
       </div>
