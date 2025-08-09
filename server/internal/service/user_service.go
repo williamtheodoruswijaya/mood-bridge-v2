@@ -11,6 +11,7 @@ import (
 	"mood-bridge-v2/server/internal/repository"
 	"mood-bridge-v2/server/internal/utils"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,7 +47,7 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 	// step 2: rollback
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -59,22 +60,64 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 		ProfileUrl: sql.NullString{String: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg", Valid: true}, // Default URL for new users
 		CreatedAt:  time.Now(),
 	}
-	
+
+	// Appendix: validate request, existingUsername, and existingEmail concurrently
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var existingUser, existingEmail *entity.User
+	var errUser, errEmail, errRequest error
+
+	wg.Add(3)
+
 	// Appendix: validate request
-	if err := utils.ValidateUserInput(&user); err != nil {
-		return nil, err
+	go func() {
+		defer wg.Done()
+
+		mu.Lock()
+		if err := utils.ValidateUserInput(&user); err != nil {
+			errRequest = err
+		}
+		mu.Unlock()
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		foundUser, err := s.UserRepository.Find(ctx, s.DB, user.Username)
+
+		mu.Lock()
+		if err != nil {
+			existingUser = foundUser
+		}
+		errUser = err
+		mu.Unlock()
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		foundEmail, err := s.UserRepository.FindByEmail(ctx, s.DB, user.Email)
+
+		mu.Lock()
+		if err != nil {
+			existingEmail = foundEmail
+		}
+		errEmail = err
+		mu.Unlock()
+	}()
+
+	wg.Wait() // After the 3 goroutines finish, continue the code below
+
+	if errRequest != nil {
+		return nil, fmt.Errorf("Error Request Body")
 	}
 
-	// Appendix: validate if username already exists
-	existingUser, err := s.UserRepository.Find(ctx, s.DB, user.Username)
-	if err == nil && existingUser != nil {
-		return nil, fmt.Errorf("username %s already exists", user.Username)
+	if errUser == nil && existingUser != nil {
+		return nil, fmt.Errorf("Username %s already exists", user.Username)
 	}
 
-	// Appendix: validate if email already exists
-	existingEmail, err := s.UserRepository.FindByEmail(ctx, s.DB, user.Email)
-	if err == nil && existingEmail != nil {
-		return nil, fmt.Errorf("email %s already exists", user.Email)
+	if errEmail == nil && existingEmail != nil {
+		return nil, fmt.Errorf("Email %s already exists", user.Email)
 	}
 
 	// step 4: call repository to create user
@@ -101,7 +144,7 @@ func (s *UserServiceImpl) Find(ctx context.Context, username string) (*response.
 	// step 1: call repository to find user
 	user, err := s.UserRepository.Find(ctx, s.DB, strings.TrimSpace(strings.ToLower(username)))
 
-	// test error 
+	// test error
 	log.Println("Error:", err)
 	if err != nil {
 		return nil, err
@@ -109,7 +152,7 @@ func (s *UserServiceImpl) Find(ctx context.Context, username string) (*response.
 
 	// step 2: convert result ke response
 	searchedUser := response.CreateUserResponse{
-		UserID:   user.ID,
+		UserID:    user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -129,7 +172,7 @@ func (s *UserServiceImpl) FindByEmail(ctx context.Context, email string) (*respo
 
 	// step 2: convert result ke response
 	searchedUser := response.CreateUserResponse{
-		UserID: 	 user.ID,
+		UserID:    user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -147,7 +190,7 @@ func (s *UserServiceImpl) FindByID(ctx context.Context, id int) (*response.Creat
 	}
 
 	searchedUser := response.CreateUserResponse{
-		UserID:	user.ID,
+		UserID:    user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
@@ -206,7 +249,7 @@ func (s *UserServiceImpl) Login(ctx context.Context, request request.ValidateUse
 
 	// step 5: get user response
 	userResponse := &response.CreateUserResponse{
-		UserID:   user.ID,
+		UserID:    user.ID,
 		Username:  user.Username,
 		Fullname:  user.Fullname,
 		Email:     user.Email,
