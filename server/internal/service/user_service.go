@@ -86,10 +86,7 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 		foundUser, err := s.UserRepository.Find(ctx, s.DB, user.Username)
 
 		mu.Lock()
-		if err != nil {
-			existingUser = foundUser
-		}
-		errUser = err
+	    existingUser, errUser = foundUser, err
 		mu.Unlock()
 	}()
 
@@ -99,10 +96,7 @@ func (s *UserServiceImpl) Create(ctx context.Context, request request.CreateUser
 		foundEmail, err := s.UserRepository.FindByEmail(ctx, s.DB, user.Email)
 
 		mu.Lock()
-		if err != nil {
-			existingEmail = foundEmail
-		}
-		errEmail = err
+	    existingEmail, errEmail = foundEmail, err
 		mu.Unlock()
 	}()
 
