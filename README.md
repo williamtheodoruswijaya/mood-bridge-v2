@@ -32,7 +32,7 @@ Dengan meningkatnya tantangan ini, dibutuhkan **solusi berbasis teknologi** yang
 
 ---
 
-## 🌈 Our Vision: The Mood Bridge Solution
+## 🌈 Our Vision
 
 **Mood Bridge** hadir sebagai aplikasi berbasis web yang membantu penyandang disabilitas mental untuk:
 
